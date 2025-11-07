@@ -3,6 +3,8 @@ package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 import jakarta.persistence.*;
 import java.util.UUID;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "decks")
@@ -25,16 +27,20 @@ public class Deck {
 
     private LocalDateTime updatedAt;
 
-    //Constructors
+    @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Card> cards = new ArrayList<>();
+
+    // Constructors
     public Deck() {
     }
+
     public Deck(User user, String title, String description) {
         this.user = user;
         this.title = title;
         this.description = description;
     }
 
-    //Getters and Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -71,6 +77,22 @@ public class Deck {
         return updatedAt;
     }
 
+    public List<Card> getCards() {
+        return cards;
+    }
+
+    //Helpers for managing bi-directional relationship
+    public void addCard(Card card) {
+        cards.add(card);
+        card.setDeck(this);
+    }
+
+    public void removeCard(Card card) {
+        cards.remove(card);
+        card.setDeck(null);
+    }
+
+    //Lifecycle Callbacks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

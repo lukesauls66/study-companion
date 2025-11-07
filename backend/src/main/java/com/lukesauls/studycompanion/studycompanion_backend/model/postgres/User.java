@@ -42,9 +42,10 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Deck> decks = new ArrayList<>();
 
-    //Constructors
+    // Constructors
     public User() {
     }
+
     public User(String email, String name, String username, String password) {
         this.email = email;
         this.name = name;
@@ -54,7 +55,7 @@ public class User {
         this.isVerified = false;
     }
 
-    //Getters and Setters
+    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -127,6 +128,18 @@ public class User {
         return decks;
     }
 
+    //Helpers for managing bi-directional relationship
+    public void addDeck(Deck deck) {
+        decks.add(deck);
+        deck.setUser(this);
+    }
+
+    public void removeDeck(Deck deck) {
+        decks.remove(deck);
+        deck.setUser(null);
+    }
+
+    //Lifecycle Callbacks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
