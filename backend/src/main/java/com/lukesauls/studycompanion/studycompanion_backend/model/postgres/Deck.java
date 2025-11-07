@@ -11,8 +11,6 @@ public class Deck {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    // @Column(nullable = false)
-    // private UUID userId;
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)
     private User user;
