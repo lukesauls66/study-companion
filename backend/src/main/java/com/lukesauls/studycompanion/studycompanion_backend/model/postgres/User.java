@@ -2,14 +2,17 @@ package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
 import jakarta.persistence.*;
+import java.util.UUID;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "users")
 public class User {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -32,11 +35,12 @@ public class User {
 
     private LocalDateTime updatedAt;
 
-    @Column
     private LocalDateTime lastLogin;
 
-    @Column
     private boolean isVerified;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Deck> decks = new ArrayList<>();
 
     //Constructors
     public User() {
@@ -51,7 +55,7 @@ public class User {
     }
 
     //Getters and Setters
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
@@ -117,6 +121,10 @@ public class User {
 
     public void setVerified(boolean verified) {
         isVerified = verified;
+    }
+
+    public List<Deck> getDecks() {
+        return decks;
     }
 
     @PrePersist
