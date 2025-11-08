@@ -1,6 +1,7 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.CardCreationType;
+import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -12,19 +13,23 @@ public class Card {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deckId", nullable = false)
     private Deck deck;
 
+    @NotBlank
     @Column(nullable = false)
     private String question;
 
+    @NotBlank
     @Column(nullable = false)
     private String answer;
 
     private String imageUrl;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private CardCreationType creationType;
 

@@ -1,6 +1,7 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.FileType;
+import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -12,24 +13,30 @@ public class Upload {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "deckId", nullable = false)
     private Deck deck;
 
+    @NotBlank
     @Column(nullable = false)
     private String fileName;
 
+    @NotBlank
     @Column(nullable = false)
     private String fileUrl;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private FileType fileType;
 
+    @NotBlank
     @Column(nullable = false)
     private Long fileSize;
 

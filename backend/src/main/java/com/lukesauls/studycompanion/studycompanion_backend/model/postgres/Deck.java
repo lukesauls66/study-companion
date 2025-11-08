@@ -1,5 +1,6 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
+import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -13,10 +14,13 @@ public class Deck {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @NotNull
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "userId", nullable = false)
     private User user;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false)
     private String title;
 

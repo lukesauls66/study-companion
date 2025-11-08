@@ -1,6 +1,7 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
+import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 import java.util.UUID;
 import java.time.LocalDateTime;
@@ -14,19 +15,26 @@ public class User {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
+    @NotBlank
     @Column(nullable = false, unique = true)
     private String email;
 
+    @NotBlank
+    @Size(max = 100)
     @Column(nullable = false)
     private String name;
 
+    @NotBlank
+    @Size(max = 32)
     @Column(nullable = false, unique = true)
     private String username;
 
+    @NotBlank
     @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
+    @NotNull
     @Column(nullable = false)
     private Role role;
 
