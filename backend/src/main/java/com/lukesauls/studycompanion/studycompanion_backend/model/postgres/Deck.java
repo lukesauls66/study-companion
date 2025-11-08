@@ -30,6 +30,9 @@ public class Deck {
     @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Card> cards = new ArrayList<>();
 
+    @OneToMany(mappedBy = "deck", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Upload> uploads = new ArrayList<>();
+
     // Constructors
     public Deck() {
     }
@@ -90,6 +93,16 @@ public class Deck {
     public void removeCard(Card card) {
         cards.remove(card);
         card.setDeck(null);
+    }
+
+    public void addUpload(Upload upload) {
+        uploads.add(upload);
+        upload.setDeck(this);
+    }
+
+    public void removeUpload(Upload upload) {
+        uploads.remove(upload);
+        upload.setDeck(null);
     }
 
     //Lifecycle Callbacks
