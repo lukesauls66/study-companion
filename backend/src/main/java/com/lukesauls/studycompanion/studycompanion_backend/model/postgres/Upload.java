@@ -1,6 +1,7 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.FileType;
+import com.lukesauls.studycompanion.studycompanion_backend.model.ParsingStatus;
 import jakarta.validation.constraints.*;
 import jakarta.persistence.*;
 import java.util.UUID;
@@ -42,6 +43,15 @@ public class Upload {
 
     private boolean isParsed;
 
+    @Enumerated(EnumType.STRING)
+    private ParsingStatus parsingStatus; 
+
+    private String errorMessage;
+
+    private LocalDateTime parsingStartedAt;
+
+    private LocalDateTime parsingCompletedAt;
+
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
@@ -59,6 +69,7 @@ public class Upload {
         this.fileType = fileType;
         this.fileSize = fileSize;
         this.isParsed = false;
+        this.parsingStatus = ParsingStatus.PENDING;
     }
 
     // Getters and Setters
@@ -124,6 +135,57 @@ public class Upload {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
+    }
+
+    public ParsingStatus getParsingStatus() {
+        return parsingStatus;
+    }
+
+    public void setParsingStatus(ParsingStatus parsingStatus) {
+        this.parsingStatus = parsingStatus;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public LocalDateTime getParsingStartedAt() {
+        return parsingStartedAt;
+    }
+
+    public void setParsingStartedAt(LocalDateTime parsingStartedAt) {
+        this.parsingStartedAt = parsingStartedAt;
+    }
+
+    public LocalDateTime getParsingCompletedAt() {
+        return parsingCompletedAt;
+    }
+
+    public void setParsingCompletedAt(LocalDateTime parsingCompletedAt) {
+        this.parsingCompletedAt = parsingCompletedAt;
+    }
+
+    // Helper Methods
+    public void startParsing() {
+        this.parsingStatus = ParsingStatus.PROCESSING;
+        this.parsingStartedAt = LocalDateTime.now();
+    }
+
+    public void completeParsing() {
+        this.parsingStatus = ParsingStatus.COMPLETED;
+        this.parsingCompletedAt = LocalDateTime.now();
+        this.isParsed = true;
+    }
+
+    public void failParsing(String errorMessage) {
+        this.parsingStatus = ParsingStatus.FAILED;
+        this.parsingCompletedAt = LocalDateTime.now();
+        this.errorMessage = errorMessage;
+        this.isParsed = false;
     }
 
     // Lifecycle Callbacks
