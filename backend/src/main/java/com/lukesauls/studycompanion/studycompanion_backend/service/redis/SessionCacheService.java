@@ -1,4 +1,4 @@
-package com.lukesauls.studycompanion.studycompanion_backend.service;
+package com.lukesauls.studycompanion.studycompanion_backend.service.redis;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.redis.Session;
 import com.lukesauls.studycompanion.studycompanion_backend.model.redis.CachedDecks;
