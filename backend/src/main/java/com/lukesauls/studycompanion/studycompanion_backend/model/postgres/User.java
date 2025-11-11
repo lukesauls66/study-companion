@@ -55,6 +55,8 @@ public class User {
 
     // Constructors
     public User() {
+        this.role = Role.USER;
+        this.isVerified = false;
     }
 
     public User(String email, String name, String username, String password) {
