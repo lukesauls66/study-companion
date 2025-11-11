@@ -1,38 +1,75 @@
 package com.lukesauls.studycompanion.studycompanion_backend.model.postgres;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
+
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
 
 class UserTest {
-    
+
+    private String name;
+    private String username;
+    private String email;
+    private String password;
+
+    @BeforeEach
+    void setUp() {
+        name = "Test User";
+        username = "testuser";
+        email = "test@example.com";
+        password = "password123";
+    }
+
     @Test
-    void testUser1Creation() {
+    void testDefaultConstructor() {
         User user = new User();
-        user.setName("Test User");
-        user.setUsername("testuser");
-        user.setEmail("test@example.com");
-        user.setPassword("password123");
-        assertEquals("Test User", user.getName());
-        assertEquals("testuser", user.getUsername());
-        assertEquals("test@example.com", user.getEmail());
-        assertEquals("password123", user.getPassword());
+        assertNotNull(user);
+        assertNull(user.getName());
+        assertNull(user.getUsername());
+        assertNull(user.getEmail());
+        assertNull(user.getPassword());
         assertEquals(Role.USER, user.getRole());
         assertFalse(user.isVerified());
+    }
+
+    @Test
+    void testParameterizedConstructor() {
+        User user = new User(email, name, username, password);
+        assertNotNull(user);
+        assertEquals(name, user.getName());
+        assertEquals(username, user.getUsername());
+        assertEquals(email, user.getEmail());
+        assertEquals(password, user.getPassword());
+        assertEquals(Role.USER, user.getRole());
+        assertFalse(user.isVerified());
+    }
+
+    @Test
+    void testGettersAndSetters() {
+        User user = new User();
+        
+        user.setName(name);
+        user.setUsername(username);
+        user.setEmail(email);
+        user.setPassword(password);
+        user.setRole(Role.ADMIN);
         user.setVerified(true);
+        
+        assertEquals(name, user.getName());
+        assertEquals(username, user.getUsername());
+        assertEquals(email, user.getEmail());
+        assertEquals(password, user.getPassword());
+        assertEquals(Role.ADMIN, user.getRole());
         assertTrue(user.isVerified());
     }
 
     @Test
-    void testUser2Creation() {
-        User user = new User("test2@example.com", "Test User 2", "testuser2", "password123");
-        assertEquals("Test User 2", user.getName());
-        assertEquals("testuser2", user.getUsername());
-        assertEquals("test2@example.com", user.getEmail());
-        assertEquals("password123", user.getPassword());
+    void testRoleEnumValues() {
+        User user = new User();
         assertEquals(Role.USER, user.getRole());
-        assertFalse(user.isVerified());
-        user.setVerified(true);
-        assertTrue(user.isVerified());
+
+        user.setRole(Role.ADMIN);
+        assertEquals(Role.ADMIN, user.getRole());
     }
 }

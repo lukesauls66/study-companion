@@ -24,8 +24,6 @@ public class CardTest {
         testQuestion = "What is 2 + 2?";
         testAnswer = "4";
         testImageUrl = "https://example.com/image.jpg";
-        
-        // Only mock what we actually use - no unnecessary stubbing
     }
     
     @Test
