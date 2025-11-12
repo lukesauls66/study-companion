@@ -141,10 +141,6 @@ public class Upload {
         return parsingStatus;
     }
 
-    public void setParsingStatus(ParsingStatus parsingStatus) {
-        this.parsingStatus = parsingStatus;
-    }
-
     public String getErrorMessage() {
         return errorMessage;
     }
@@ -157,16 +153,8 @@ public class Upload {
         return parsingStartedAt;
     }
 
-    public void setParsingStartedAt(LocalDateTime parsingStartedAt) {
-        this.parsingStartedAt = parsingStartedAt;
-    }
-
     public LocalDateTime getParsingCompletedAt() {
         return parsingCompletedAt;
-    }
-
-    public void setParsingCompletedAt(LocalDateTime parsingCompletedAt) {
-        this.parsingCompletedAt = parsingCompletedAt;
     }
 
     // Helper Methods
