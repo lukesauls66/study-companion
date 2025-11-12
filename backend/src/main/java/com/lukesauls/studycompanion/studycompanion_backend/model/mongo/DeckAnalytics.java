@@ -45,17 +45,16 @@ public class DeckAnalytics {
     // Constructors
     public DeckAnalytics() {
         this.id = UUID.randomUUID();
-        this.reviewSessions = new ArrayList<>();
-    }
-
-    public DeckAnalytics(UUID deckId, UUID userId) {
-        this.id = UUID.randomUUID();
-        this.deckId = deckId;
-        this.userId = userId;
         this.highestScore = 0;
         this.previousScore = 0;
         this.reviewSessions = new ArrayList<>();
         this.proficiency = false;
+    }
+
+    public DeckAnalytics(UUID deckId, UUID userId) {
+        this();
+        this.deckId = deckId;
+        this.userId = userId;
     }
 
     public DeckAnalytics(UUID deckId, UUID userId, int highestScore, LocalDateTime highestScoreDate, int previousScore,
@@ -74,10 +73,6 @@ public class DeckAnalytics {
     // Getters and setters
     public UUID getId() {
         return id;
-    }
-
-    public void setId(UUID id) {
-        this.id = id;
     }
 
     public UUID getDeckId() {
@@ -100,32 +95,16 @@ public class DeckAnalytics {
         return highestScore;
     }
 
-    public void setHighestScore(int highestScore) {
-        this.highestScore = highestScore;
-    }
-
     public LocalDateTime getHighestScoreDate() {
         return highestScoreDate;
-    }
-
-    public void setHighestScoreDate(LocalDateTime highestScoreDate) {
-        this.highestScoreDate = highestScoreDate;
     }
 
     public int getPreviousScore() {
         return previousScore;
     }
 
-    public void setPreviousScore(int previousScore) {
-        this.previousScore = previousScore;
-    }
-
     public LocalDateTime getPreviousScoreDate() {
         return previousScoreDate;
-    }
-
-    public void setPreviousScoreDate(LocalDateTime previousScoreDate) {
-        this.previousScoreDate = previousScoreDate;
     }
 
     public List<ReviewSession> getReviewSessions() {
