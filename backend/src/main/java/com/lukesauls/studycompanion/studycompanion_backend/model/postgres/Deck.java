@@ -88,7 +88,11 @@ public class Deck {
         return cards;
     }
 
-    //Helpers for managing bi-directional relationship
+    public List<Upload> getUploads() {
+        return uploads;
+    }
+
+    // Helpers for managing bi-directional relationship
     public void addCard(Card card) {
         cards.add(card);
         card.setDeck(this);
@@ -109,7 +113,7 @@ public class Deck {
         upload.setDeck(null);
     }
 
-    //Lifecycle Callbacks
+    // Lifecycle Callbacks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
