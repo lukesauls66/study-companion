@@ -35,11 +35,11 @@ public class ReviewSession {
     //Constructors
     public ReviewSession() {
         this.id = UUID.randomUUID();
+        this.date = LocalDateTime.now();
     }
 
-    public ReviewSession(LocalDateTime date, String deckName, int score, int cardsReviewed, int correctAnswers) {
-        this.id = UUID.randomUUID();
-        this.date = date;
+    public ReviewSession(String deckName, int score, int cardsReviewed, int correctAnswers) {
+        this();
         this.deckName = deckName;
         this.score = score;
         this.cardsReviewed = cardsReviewed;
@@ -55,16 +55,8 @@ public class ReviewSession {
         return date;
     }
 
-    public void setDate(LocalDateTime date) {
-        this.date = date;
-    }
-
     public String getDeckName() {
         return deckName;
-    }
-
-    public void setDeckName(String deckName) {
-        this.deckName = deckName;
     }
 
     public int getScore() {
@@ -79,16 +71,8 @@ public class ReviewSession {
         return cardsReviewed;
     }
 
-    public void setCardsReviewed(int cardsReviewed) {
-        this.cardsReviewed = cardsReviewed;
-    }
-
     public int getCorrectAnswers() {
         return correctAnswers;
-    }
-
-    public void setCorrectAnswers(int correctAnswers) {
-        this.correctAnswers = correctAnswers;
     }
 
     @Override
