@@ -153,8 +153,8 @@ public class DeckAnalytics {
     public String toString() {
         return "DeckAnalytics{" +
                 "id='" + id + '\'' +
-                ", deckId=" + deckId +
-                ", userId=" + userId +
+                ", deckId='" + deckId + '\'' +
+                ", userId='" + userId + '\'' +
                 ", highestScore=" + highestScore +
                 ", highestScoreDate=" + highestScoreDate +
                 ", previousScore=" + previousScore +
