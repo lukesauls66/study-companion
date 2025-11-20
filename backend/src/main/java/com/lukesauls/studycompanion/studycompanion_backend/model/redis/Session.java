@@ -64,8 +64,8 @@ public class Session implements Serializable {
         return lastAccessedAt;
     }
 
-    public void setLastAccessedAt(LocalDateTime lastAccessedAt) {
-        this.lastAccessedAt = lastAccessedAt;
+    public void setLastAccessedAt() {
+        this.lastAccessedAt = LocalDateTime.now();
     }
 
     // Helper methods
@@ -85,7 +85,7 @@ public class Session implements Serializable {
     public String toString() {
         return "Session{" +
                 "sessionId='" + sessionId + '\'' +
-                ", userId=" + userId +
+                ", userId='" + userId + '\'' +
                 ", expiresAt=" + expiresAt +
                 ", createdAt=" + createdAt +
                 ", lastAccessedAt=" + lastAccessedAt +
