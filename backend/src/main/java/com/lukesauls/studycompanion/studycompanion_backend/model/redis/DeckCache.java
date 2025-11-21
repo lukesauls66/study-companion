@@ -11,7 +11,6 @@ public class DeckCache implements Serializable {
     private String title;
     private String description;
     private int cardCount;
-    private LocalDateTime lastStudied;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -56,14 +55,6 @@ public class DeckCache implements Serializable {
 
     public void setCardCount(int cardCount) {
         this.cardCount = cardCount;
-    }
-
-    public LocalDateTime getLastStudied() {
-        return lastStudied;
-    }
-
-    public void setLastStudied(LocalDateTime lastStudied) {
-        this.lastStudied = lastStudied;
     }
 
     public LocalDateTime getCreatedAt() {
