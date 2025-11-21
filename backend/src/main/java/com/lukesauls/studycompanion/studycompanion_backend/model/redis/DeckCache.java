@@ -69,10 +69,12 @@ public class DeckCache implements Serializable {
     @Override
     public String toString() {
         return "DeckCache{" +
-                "deckId=" + deckId +
+                "deckId='" + deckId + '\'' +
                 ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
                 ", cardCount=" + cardCount +
-                ", lastStudied=" + lastStudied +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }
