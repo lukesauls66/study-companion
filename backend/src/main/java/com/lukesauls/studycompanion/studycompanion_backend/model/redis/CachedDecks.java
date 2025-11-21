@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @RedisHash(value = "cached_decks", timeToLive = 86400) // 24 hours TTL - matches session duration 
 public class CachedDecks implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     @Id
     private UUID userId;
