@@ -38,24 +38,12 @@ public class DeckCache implements Serializable {
         return deckId;
     }
 
-    public void setDeckId(UUID deckId) {
-        this.deckId = deckId;
-    }
-
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public int getCardCount() {
@@ -70,16 +58,12 @@ public class DeckCache implements Serializable {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUpdatedAt() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     @Override
