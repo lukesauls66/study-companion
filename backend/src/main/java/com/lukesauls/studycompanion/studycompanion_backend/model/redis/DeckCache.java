@@ -6,22 +6,30 @@ import java.util.UUID;
 
 public class DeckCache implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private UUID deckId;
     private String title;
     private String description;
     private int cardCount;
-    private LocalDateTime lastStudied;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
     // Constructors
-    public DeckCache() {}
+    public DeckCache() {
+        this.cardCount = 0;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
-    public DeckCache(UUID deckId, String title, String description, int cardCount) {
+    public DeckCache(UUID deckId, String title, String description) {
+        this();
         this.deckId = deckId;
         this.title = title;
         this.description = description;
+    }
+
+    public DeckCache(UUID deckId, String title, String description, int cardCount) {
+        this(deckId, title, description);
         this.cardCount = cardCount;
     }
 
@@ -30,24 +38,12 @@ public class DeckCache implements Serializable {
         return deckId;
     }
 
-    public void setDeckId(UUID deckId) {
-        this.deckId = deckId;
-    }
-
     public String getTitle() {
         return title;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 
     public int getCardCount() {
@@ -58,37 +54,27 @@ public class DeckCache implements Serializable {
         this.cardCount = cardCount;
     }
 
-    public LocalDateTime getLastStudied() {
-        return lastStudied;
-    }
-
-    public void setLastStudied(LocalDateTime lastStudied) {
-        this.lastStudied = lastStudied;
-    }
-
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
     }
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
 
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
+    public void setUpdatedAt() {
+        this.updatedAt = LocalDateTime.now();
     }
 
     @Override
     public String toString() {
         return "DeckCache{" +
-                "deckId=" + deckId +
+                "deckId='" + deckId + '\'' +
                 ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
                 ", cardCount=" + cardCount +
-                ", lastStudied=" + lastStudied +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
                 '}';
     }
 }

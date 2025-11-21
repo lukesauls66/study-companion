@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @RedisHash(value = "cached_decks", timeToLive = 86400) // 24 hours TTL - matches session duration 
 public class CachedDecks implements Serializable {
+    private static final long serialVersionUID = 1L;
     
     @Id
     private UUID userId;
@@ -36,7 +37,7 @@ public class CachedDecks implements Serializable {
 
     public CachedDecks(UUID userId, List<DeckCache> decks) {
         this(userId);
-        this.decks = decks != null ? decks : new ArrayList<>();
+        this.decks = decks != null ? new ArrayList<>(decks) : new ArrayList<>();
     }
 
     // Getters and Setters
@@ -44,33 +45,16 @@ public class CachedDecks implements Serializable {
         return userId;
     }
 
-    public void setUserId(UUID userId) {
-        this.userId = userId;
-    }
-
     public List<DeckCache> getDecks() {
         return decks;
-    }
-
-    public void setDecks(List<DeckCache> decks) {
-        this.decks = decks;
-        this.lastModified = LocalDateTime.now();
     }
 
     public LocalDateTime getCachedAt() {
         return cachedAt;
     }
 
-    public void setCachedAt(LocalDateTime cachedAt) {
-        this.cachedAt = cachedAt;
-    }
-
     public LocalDateTime getLastModified() {
         return lastModified;
-    }
-
-    public void setLastModified(LocalDateTime lastModified) {
-        this.lastModified = lastModified;
     }
 
     // Helper methods
@@ -122,7 +106,7 @@ public class CachedDecks implements Serializable {
     @Override
     public String toString() {
         return "CachedDecks{" +
-                "userId=" + userId +
+                "userId='" + userId + '\'' +
                 ", deckCount=" + getDeckCount() +
                 ", cachedAt=" + cachedAt +
                 ", lastModified=" + lastModified +
