@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public class DeckCache implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private UUID deckId;
     private String title;
     private String description;
@@ -15,12 +15,21 @@ public class DeckCache implements Serializable {
     private LocalDateTime updatedAt;
 
     // Constructors
-    public DeckCache() {}
+    public DeckCache() {
+        this.cardCount = 0;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
-    public DeckCache(UUID deckId, String title, String description, int cardCount) {
+    public DeckCache(UUID deckId, String title, String description) {
+        this();
         this.deckId = deckId;
         this.title = title;
         this.description = description;
+    }
+
+    public DeckCache(UUID deckId, String title, String description, int cardCount) {
+        this(deckId, title, description);
         this.cardCount = cardCount;
     }
 
