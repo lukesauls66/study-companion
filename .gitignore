@@ -12,3 +12,6 @@ target
 
 # Docker volumes
 data/
+
+#API flow
+JAVA_API_FLOW.md
