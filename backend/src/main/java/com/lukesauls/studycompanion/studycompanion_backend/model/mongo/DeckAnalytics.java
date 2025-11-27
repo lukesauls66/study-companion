@@ -59,9 +59,7 @@ public class DeckAnalytics {
 
     public DeckAnalytics(UUID deckId, UUID userId, int highestScore, LocalDateTime highestScoreDate, int previousScore,
             LocalDateTime previousScoreDate, List<ReviewSession> reviewSessions, boolean proficiency) {
-        this.id = UUID.randomUUID();
-        this.deckId = deckId;
-        this.userId = userId;
+        this(deckId, userId);
         this.highestScore = highestScore;
         this.highestScoreDate = highestScoreDate;
         this.previousScore = previousScore;
