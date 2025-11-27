@@ -12,6 +12,14 @@ public class ReviewSession {
     @Id
     private UUID id;
 
+    @Field("deck_id")
+    @NotNull
+    private UUID deckId;
+
+    @Field("user_id")
+    @NotNull
+    private UUID userId;
+
     @Field("date")
     @NotNull
     private LocalDateTime date;
@@ -38,8 +46,14 @@ public class ReviewSession {
         this.date = LocalDateTime.now();
     }
 
-    public ReviewSession(String deckName, int score, int cardsReviewed, int correctAnswers) {
+    public ReviewSession(UUID deckId, UUID userId) {
         this();
+        this.deckId = deckId;
+        this.userId = userId;
+    }
+
+    public ReviewSession(UUID deckId, UUID userId, String deckName, int score, int cardsReviewed, int correctAnswers) {
+        this(deckId, userId);
         this.deckName = deckName;
         this.score = score;
         this.cardsReviewed = cardsReviewed;
@@ -49,6 +63,22 @@ public class ReviewSession {
     // Getters and setters
     public UUID getId() {
         return id;
+    }
+
+    public UUID getDeckId() {
+        return deckId;
+    }
+
+    public void setDeckId(UUID deckId) {
+        this.deckId = deckId;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
     public LocalDateTime getDate() {
