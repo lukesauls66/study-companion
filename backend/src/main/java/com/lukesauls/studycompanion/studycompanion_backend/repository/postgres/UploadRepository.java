@@ -2,9 +2,11 @@ package com.lukesauls.studycompanion.studycompanion_backend.repository.postgres;
 
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Upload;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
 
+@Repository
 public interface UploadRepository extends JpaRepository<Upload, UUID> {
     
     /**
@@ -20,7 +22,7 @@ public interface UploadRepository extends JpaRepository<Upload, UUID> {
     /**
      * Count the number of uploads belonging to a specific deck
      */
-    Long countByDeckId(UUID deckId);
+    long countByDeckId(UUID deckId);
 
     /**
      * Find all uploads belonging to a specific user
@@ -35,5 +37,5 @@ public interface UploadRepository extends JpaRepository<Upload, UUID> {
     /**
      * Count the number of uploads belonging to a specific user
      */
-    Long countByUserId(UUID userId);
+    long countByUserId(UUID userId);
 }

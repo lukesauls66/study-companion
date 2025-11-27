@@ -22,5 +22,5 @@ public interface DeckRepository extends JpaRepository<Deck, UUID> {
     /**
      * Count number of decks belonging to a specific user
      */
-    Long countByUserId(UUID userId);
+    long countByUserId(UUID userId);
 }
