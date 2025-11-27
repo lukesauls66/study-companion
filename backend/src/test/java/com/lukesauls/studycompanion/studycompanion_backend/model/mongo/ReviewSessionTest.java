@@ -5,8 +5,12 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.util.UUID;
+
 public class ReviewSessionTest {
 
+    private UUID deckId;
+    private UUID userId;
     private String deckName;
     private int score;
     private int cardsReviewed;
@@ -14,6 +18,8 @@ public class ReviewSessionTest {
 
     @BeforeEach
     void setUp() {
+        deckId = UUID.randomUUID();
+        userId = UUID.randomUUID();
         deckName = "Sample Deck";
         score = 85;
         cardsReviewed = 20;
@@ -34,7 +40,7 @@ public class ReviewSessionTest {
 
     @Test
     void testParameterizedConstructor() {
-        ReviewSession session = new ReviewSession(deckName, score, cardsReviewed, correctAnswers);
+        ReviewSession session = new ReviewSession(deckId, userId, deckName, score, cardsReviewed, correctAnswers);
         assertNotNull(session);
         assertNotNull(session.getId());
         assertNotNull(session.getDate());
@@ -46,7 +52,7 @@ public class ReviewSessionTest {
     
     @Test
     void testToString() {
-        ReviewSession session = new ReviewSession(deckName, score, cardsReviewed, correctAnswers);
+        ReviewSession session = new ReviewSession(deckId, userId, deckName, score, cardsReviewed, correctAnswers);
         String expectedString = "ReviewSession{" +
                 "id='" + session.getId() + '\'' +
                 ", date=" + session.getDate() +
