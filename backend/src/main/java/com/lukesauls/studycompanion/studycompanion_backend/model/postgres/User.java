@@ -125,8 +125,8 @@ public class User {
         return lastLogin;
     }
 
-    public void setLastLogin(LocalDateTime lastLogin) {
-        this.lastLogin = lastLogin;
+    public void setLastLogin() {
+        this.lastLogin = LocalDateTime.now();
     }
 
     public boolean isVerified() {
