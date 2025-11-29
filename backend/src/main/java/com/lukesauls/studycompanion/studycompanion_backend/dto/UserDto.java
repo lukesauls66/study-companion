@@ -7,5 +7,5 @@ public class UserDto{
 
     public record Update(String email, String name, String username) {}
 
-    public record ChangePassword(@NotNull String currPassword, @NotNull String newPassword) {}
+    public record ChangePassword(@NotNull String currPassword, @NotNull String newPassword, @NotNull String confirmNewPassword) {}
 }
