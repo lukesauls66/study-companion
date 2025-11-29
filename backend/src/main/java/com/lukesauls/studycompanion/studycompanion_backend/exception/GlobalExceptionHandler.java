@@ -1,0 +1,14 @@
+package com.lukesauls.studycompanion.studycompanion_backend.exception;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+    
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
