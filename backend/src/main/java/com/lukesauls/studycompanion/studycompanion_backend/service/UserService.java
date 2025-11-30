@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UserDto;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidPasswordChangeException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserAlreadyExistsException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
@@ -83,10 +84,30 @@ public class UserService {
     }
 
     /**
+     * Verify user
+     */
+    public User verifyUser(@NonNull UUID userId) {
+        User existingUser = getUserById(userId);
+        existingUser.setVerified(true);
+
+        return userRepository.save(existingUser);
+    }
+
+    /**
      * Get all users verified/unverified
      */
     public List<User> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         return userRepository.findByIsVerified(isVerified);
+    }
+
+    /**
+     * update user's last login
+     */
+    public void updateLastLogin(@NonNull UUID userId) {
+        User existingUser = getUserById(userId);
+        existingUser.setLastLogin();
+
+        userRepository.save(existingUser);
     }
 
     /**
@@ -102,7 +123,10 @@ public class UserService {
     public User updateUser(@NonNull UUID userId, @NonNull UserDto.Update userDto) {
         User existingUser = getUserById(userId);
 
-        if (userDto.email() != null && !userDto.email().equals(existingUser.getEmail())) {
+        if (userDto.email() != null) {
+            if (userDto.email().equals(existingUser.getEmail())) {
+                throw new InvalidUserUpdateException("Email is already set to this value");
+            }
             if (userRepository.findByEmail(userDto.email()).isPresent()) {
                 throw new UserAlreadyExistsException("User with this email already exists");
             }
@@ -142,31 +166,11 @@ public class UserService {
     }
 
     /**
-     * update user's last login
-     */
-    public void updateLastLogin(@NonNull UUID userId) {
-        User existingUser = getUserById(userId);
-        existingUser.setLastLogin();
-
-        userRepository.save(existingUser);
-    }
-
-    /**
      * Delete user
      */
     public void deleteUser(@NonNull UUID userId) {
         getUserById(userId);
 
         userRepository.deleteById(userId);
-    }
-
-    /**
-     * Verify user
-     */
-    public User verifyUser(@NonNull UUID userId) {
-        User existingUser = getUserById(userId);
-        existingUser.setVerified(true);
-
-        return userRepository.save(existingUser);
     }
 }
