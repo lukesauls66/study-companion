@@ -21,4 +21,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidPasswordChange(InvalidPasswordChangeException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(InvalidUserUpdateException.class)
+    public ResponseEntity<String> handleInvalidUserUpdate(InvalidUserUpdateException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
