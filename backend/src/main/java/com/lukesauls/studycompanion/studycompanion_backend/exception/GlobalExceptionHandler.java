@@ -16,4 +16,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUserNotFound(UserNotFoundException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(InvalidPasswordChangeException.class)
+    public ResponseEntity<String> handleInvalidPasswordChange(InvalidPasswordChangeException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
