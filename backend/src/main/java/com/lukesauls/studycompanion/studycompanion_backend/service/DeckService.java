@@ -9,6 +9,8 @@ import org.springframework.stereotype.Service;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.DeckDto;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
@@ -29,6 +31,14 @@ public class DeckService {
     @SuppressWarnings("null")
     public @NonNull Deck createDeck(@NonNull DeckDto.Create deckDto) {
         User user = userService.getUserById(deckDto.userId());
+
+        if (deckDto.title().trim().isEmpty()) {
+            throw new InvalidDeckCreationException("Title cannot be empty");
+        }
+
+        if (deckDto.description().trim().isEmpty()) {
+            throw new InvalidDeckCreationException("Description cannot be empty");
+        }
 
         Deck deck = new Deck(user, deckDto.title(), deckDto.description());
 
@@ -72,18 +82,25 @@ public class DeckService {
      * Update deck
      */
     public Deck updateDeck(@NonNull UUID deckId, @NonNull DeckDto.Update deckDto, @NonNull UUID requestingUserId) {
+        boolean titleProvided = deckDto.title() != null && !deckDto.title().trim().isEmpty();
+        boolean descriptionProvided = deckDto.description() != null && !deckDto.description().trim().isEmpty();
+        
+        if (!titleProvided && !descriptionProvided) {
+            throw new InvalidDeckUpdateException("At least one field must be provided for update");
+        }
+        
         Deck existingDeck = getDeckById(deckId);
 
         if (!existingDeck.getUser().getId().equals(requestingUserId)) {
             throw new UnauthorizedDeckAccessException("You can only update your own decks");
         }
 
-        if (deckDto.title() != null) {
-            existingDeck.setTitle(deckDto.title());
+        if (titleProvided) {
+            existingDeck.setTitle(deckDto.title().trim());
         }
 
-        if (deckDto.description() != null) {
-            existingDeck.setDescription(deckDto.description());
+        if (descriptionProvided) {
+            existingDeck.setDescription(deckDto.description().trim());
         }
 
         return deckRepository.save(existingDeck);
