@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UserDto;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidPasswordChangeException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserCreationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserAlreadyExistsException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
@@ -40,6 +41,50 @@ public class UserServiceIntegrationTest {
         assertThat(user.getPassword()).isEqualTo("password");
     }
 
+    @Test
+    void createUser_BlankEmail_ThrowsInvalidUserCreationException() {
+        UserDto.Create createDto = new UserDto.Create(" ", "John Smith", "john123", "password");
+
+        InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
+            userService.createUser(createDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Email cannot be empty");
+    }
+
+    @Test
+    void createUser_BlankName_ThrowsInvalidUserCreationException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", " ", "john123", "password");
+
+        InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
+            userService.createUser(createDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Name cannot be empty");
+    }
+
+    @Test
+    void createUser_BlankUsername_ThrowsInvalidUserCreationException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", " ", "password");
+
+        InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
+            userService.createUser(createDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Username cannot be empty");
+    }
+
+    @Test
+    void createUser_BlankPassword_ThrowsInvalidUserCreationException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", " ");
+
+        InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
+            userService.createUser(createDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Password cannot be empty");
+    }    
+    
     @Test
     void createUser_DuplicateEmail_ThrowsUserAlreadyExistsException() {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
@@ -268,6 +313,22 @@ public class UserServiceIntegrationTest {
         assertThat(refreshedUser.getEmail()).isEqualTo("test@email.com");
         assertThat(refreshedUser.getName()).isEqualTo("Jacob Smith");
         assertThat(refreshedUser.getUsername()).isEqualTo("jacob123");
+    }
+
+    @Test
+    @SuppressWarnings("null")
+    void updateUser_InvalidInput_ThrowsInvalidUserUpdate() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+
+        User user = userService.createUser(createDto);
+
+        UserDto.Update updateDto = new UserDto.Update(null, " ", " ");
+
+        InvalidUserUpdateException exception = assertThrows(InvalidUserUpdateException.class, () -> {
+            userService.updateUser(user.getId(), updateDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("At least one field must be provided");
     }
 
     @Test

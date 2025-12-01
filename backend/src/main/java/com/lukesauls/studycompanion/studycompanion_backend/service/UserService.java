@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UserDto;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidPasswordChangeException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserCreationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserAlreadyExistsException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
@@ -26,6 +27,22 @@ public class UserService {
      */
     // FIXME: Add password encoding when adding auth
     public User createUser(@NonNull UserDto.Create userDto) {
+        if (userDto.email().trim().isEmpty()) {
+            throw new InvalidUserCreationException("Email cannot be empty");
+        }
+
+        if (userDto.name().trim().isEmpty()) {
+            throw new InvalidUserCreationException("Name cannot be empty");
+        }
+
+        if (userDto.username().trim().isEmpty()) {
+            throw new InvalidUserCreationException("Username cannot be empty");
+        }
+
+        if (userDto.password().trim().isEmpty()) {
+            throw new InvalidUserCreationException("Password cannot be empty");
+        }
+
         if (userRepository.findByEmail(userDto.email()).isPresent()) {
             throw new UserAlreadyExistsException("User with this email already exists");
         }
@@ -121,6 +138,14 @@ public class UserService {
      * Update user excluding password
      */
     public User updateUser(@NonNull UUID userId, @NonNull UserDto.Update userDto) {
+        boolean emailProvided = userDto.email() != null && !userDto.email().trim().isEmpty();
+        boolean nameProvided = userDto.name() != null && !userDto.name().trim().isEmpty();
+        boolean usernameProvided = userDto.username() != null && !userDto.username().trim().isEmpty();
+
+        if (!emailProvided && !nameProvided && !usernameProvided) {
+            throw new InvalidUserUpdateException("At least one field must be provided");
+        }
+
         User existingUser = getUserById(userId);
 
         if (userDto.email() != null) {
