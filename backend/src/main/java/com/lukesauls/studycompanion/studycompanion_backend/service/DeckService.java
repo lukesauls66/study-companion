@@ -1,0 +1,111 @@
+package com.lukesauls.studycompanion.studycompanion_backend.service;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+
+import com.lukesauls.studycompanion.studycompanion_backend.dto.DeckDto;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
+import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
+import com.lukesauls.studycompanion.studycompanion_backend.repository.postgres.DeckRepository;
+
+@Service
+public class DeckService {
+
+    @Autowired
+    private DeckRepository deckRepository;
+
+    @Autowired
+    private UserService userService;
+
+    /**
+     * Create new deck
+     */
+    @SuppressWarnings("null")
+    public @NonNull Deck createDeck(@NonNull DeckDto.Create deckDto) {
+        User user = userService.getUserById(deckDto.userId());
+
+        Deck deck = new Deck(user, deckDto.title(), deckDto.description());
+
+        return deckRepository.save(deck);
+    }
+
+    /**
+     * Get deck by ID if deck exists
+     */
+    @SuppressWarnings("null")
+    public @NonNull Deck getDeckById(@NonNull UUID id) {
+        if (!deckRepository.existsById(id)) {
+            throw new DeckNotFoundException("Deck with ID " + id + " not found");
+        }
+
+        return deckRepository.findById(id).get();
+    }
+
+    /**
+     * Get all decks
+     */
+    public List<Deck> getAllDecks() {
+        return deckRepository.findAll();
+    }
+
+    /**
+     * Get all decks belonging to a user
+     */
+    public List<Deck> getAllUserDecks(@NonNull UUID userId) {
+        return deckRepository.findByUserId(userId);
+    }
+
+    /**
+     * Get count of all decks belonging to a user
+     */
+    public long getCountOfAllUserDecks(@NonNull UUID userId) {
+        return deckRepository.countByUserId(userId);
+    }
+
+    /**
+     * Update deck
+     */
+    public Deck updateDeck(@NonNull UUID deckId, @NonNull DeckDto.Update deckDto, @NonNull UUID requestingUserId) {
+        Deck existingDeck = getDeckById(deckId);
+
+        if (!existingDeck.getUser().getId().equals(requestingUserId)) {
+            throw new UnauthorizedDeckAccessException("You can only update your own decks");
+        }
+
+        if (deckDto.title() != null) {
+            existingDeck.setTitle(deckDto.title());
+        }
+
+        if (deckDto.description() != null) {
+            existingDeck.setDescription(deckDto.description());
+        }
+
+        return deckRepository.save(existingDeck);
+    }
+
+    /**
+     * Delete deck only if logged in user owns deck
+     */
+    public void deleteDeckById(@NonNull UUID deckId, @NonNull UUID requestingUserId) {
+        Deck deck = getDeckById(deckId);
+
+        if (!deck.getUser().getId().equals(requestingUserId)) {
+            throw new UnauthorizedDeckAccessException("You can only delete your own decks");
+        }
+
+        deckRepository.deleteById(deckId);
+    }
+
+    /**
+     * Delete all decks belonging to a user
+     */
+    public void deleteAllUserDecks(@NonNull UUID userId) {
+        deckRepository.deleteByUserId(userId);
+    }
+}
