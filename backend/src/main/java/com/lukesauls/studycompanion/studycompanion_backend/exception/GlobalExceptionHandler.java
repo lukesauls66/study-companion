@@ -22,6 +22,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
+    @ExceptionHandler(InvalidUserCreationException.class)
+    public ResponseEntity<String> handleInvalidUserCreation(InvalidUserCreationException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
     @ExceptionHandler(InvalidUserUpdateException.class)
     public ResponseEntity<String> handleInvalidUserUpdate(InvalidUserUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
