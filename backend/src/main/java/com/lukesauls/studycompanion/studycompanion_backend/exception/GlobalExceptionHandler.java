@@ -26,4 +26,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidUserUpdate(InvalidUserUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(DeckNotFoundException.class)
+    public ResponseEntity<String> handleDeckNotFound(DeckNotFoundException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
