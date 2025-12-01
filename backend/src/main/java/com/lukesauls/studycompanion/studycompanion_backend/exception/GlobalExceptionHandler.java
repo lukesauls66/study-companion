@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
@@ -34,6 +34,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UnauthorizedDeckAccessException.class)
     public ResponseEntity<String> handleUnauthorizedDeckAccess(UnauthorizedDeckAccessException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidDeckCreationException.class)
+    public ResponseEntity<String> handleInvalidDeckCreation(InvalidDeckCreationException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidDeckUpdateException.class)
+    public ResponseEntity<String> handleInvalidDeckUpdate(InvalidDeckUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
