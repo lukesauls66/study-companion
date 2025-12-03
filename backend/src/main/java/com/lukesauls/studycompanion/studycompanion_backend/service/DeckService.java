@@ -41,6 +41,8 @@ public class DeckService {
         }
 
         Deck deck = new Deck(user, deckDto.title(), deckDto.description());
+        
+        user.addDeck(deck);
 
         return deckRepository.save(deck);
     }
@@ -117,6 +119,9 @@ public class DeckService {
             throw new UnauthorizedDeckAccessException("You can only delete your own decks");
         }
 
+        User user = deck.getUser();
+        user.removeDeck(deck);
+
         deckRepository.deleteById(deckId);
     }
 
@@ -125,6 +130,10 @@ public class DeckService {
      */
     //FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserDecks(@NonNull UUID userId) {
+        User user = userService.getUserById(userId);
+        
+        user.getDecks().clear();
+        
         deckRepository.deleteByUserId(userId);
     }
 }
