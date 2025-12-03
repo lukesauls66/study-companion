@@ -54,7 +54,7 @@ public class UserService {
             throw new UserAlreadyExistsException("User with this email already exists");
         }
 
-        User user = new User(userDto.email(), userDto.name(), userDto.username(), userDto.password());
+        User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(), userDto.password().trim());
 
         return userRepository.save(user);
     }
@@ -208,15 +208,15 @@ public class UserService {
                 throw new UserAlreadyExistsException("User with this email already exists");
             }
 
-            existingUser.setEmail(userDto.email());
+            existingUser.setEmail(userDto.email().trim());
         }
 
         if (userDto.name() != null) {
-            existingUser.setName(userDto.name());
+            existingUser.setName(userDto.name().trim());
         }
 
         if (userDto.username() != null) {
-            existingUser.setUsername(userDto.username());
+            existingUser.setUsername(userDto.username().trim());
         }
 
         return userRepository.save(existingUser);
@@ -244,7 +244,7 @@ public class UserService {
             throw new InvalidPasswordChangeException("New password doesn't match confirm password");
         }
 
-        existingUser.setPassword(userDto.newPassword());
+        existingUser.setPassword(userDto.newPassword().trim());
 
         return userRepository.save(existingUser);
     }

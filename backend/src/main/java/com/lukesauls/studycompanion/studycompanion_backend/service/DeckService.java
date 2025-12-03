@@ -47,7 +47,7 @@ public class DeckService {
             throw new InvalidDeckCreationException("Description cannot be empty");
         }
 
-        Deck deck = new Deck(user, deckDto.title(), deckDto.description());
+        Deck deck = new Deck(user, deckDto.title().trim(), deckDto.description().trim());
         
         user.addDeck(deck);
 
