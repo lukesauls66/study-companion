@@ -23,7 +23,14 @@ public class UserService {
     private UserRepository userRepository;
 
     /**
-     * Create new user if user doesn't already exist
+     * Creates a new user if email doesn't already exist.
+     * Validates all required fields are not empty.
+     * Sets default role to USER and verified status to false.
+     * 
+     * @param userDto the user creation data containing email, name, username, and password
+     * @return the created user with generated ID and timestamps
+     * @throws InvalidUserCreationException if any required field is empty
+     * @throws UserAlreadyExistsException if a user with the email already exists
      */
     // FIXME: Add password encoding when adding auth
     public User createUser(@NonNull UserDto.Create userDto) {
@@ -53,7 +60,11 @@ public class UserService {
     }
 
     /**
-     * Get user by ID if user exists
+     * Retrieves a user by their unique identifier.
+     * 
+     * @param id the UUID of the user to retrieve
+     * @return the user with the specified ID
+     * @throws UserNotFoundException if no user exists with the given ID
      */
     @SuppressWarnings("null")
     public @NonNull User getUserById(@NonNull UUID id) {
@@ -65,7 +76,11 @@ public class UserService {
     }
 
     /**
-     * Get user by email if user exists
+     * Retrieves a user by their email address.
+     * 
+     * @param email the email address of the user to retrieve
+     * @return the user with the specified email
+     * @throws UserNotFoundException if no user exists with the given email
      */
     public User getUserByEmail(@NonNull String email) {
         if (!userRepository.existsByEmail(email)) {
@@ -76,7 +91,11 @@ public class UserService {
     }
 
     /**
-     * Get user by username if user exists
+     * Retrieves a user by their username.
+     * 
+     * @param username the username of the user to retrieve
+     * @return the user with the specified username
+     * @throws UserNotFoundException if no user exists with the given username
      */
     public User getUserByUsername(@NonNull String username) {
         if (!userRepository.existsByUsername(username)) {
@@ -87,21 +106,33 @@ public class UserService {
     }
 
     /**
-     * Get all users
+     * Retrieves all users in the system.
+     * Should typically be restricted to admin users in production.
+     * 
+     * @return a list of all users in the system
      */
     public List<User> getAllUsers() {
         return userRepository.findAll();
     }
 
     /**
-     * Get all users of a certain role
+     * Retrieves all users with a specific role.
+     * Useful for admin operations and role-based filtering.
+     * 
+     * @param role the role to filter users by
+     * @return a list of users with the specified role
      */
     public List<User> getAllUsersOfARole(@NonNull Role role) {
         return userRepository.findByRole(role);
     }
 
     /**
-     * Verify user
+     * Marks a user as verified.
+     * Typically used after email verification process.
+     * 
+     * @param userId the UUID of the user to verify
+     * @return the updated user with verified status set to true
+     * @throws UserNotFoundException if no user exists with the given ID
      */
     public User verifyUser(@NonNull UUID userId) {
         User existingUser = getUserById(userId);
@@ -111,14 +142,22 @@ public class UserService {
     }
 
     /**
-     * Get all users verified/unverified
+     * Retrieves all users filtered by their verification status.
+     * Useful for admin operations and user management.
+     * 
+     * @param isVerified true to get verified users, false to get unverified users
+     * @return a list of users with the specified verification status
      */
     public List<User> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         return userRepository.findByIsVerified(isVerified);
     }
 
     /**
-     * update user's last login
+     * Updates a user's last login timestamp to the current time.
+     * Called during authentication process to track user activity.
+     * 
+     * @param userId the UUID of the user whose last login to update
+     * @throws UserNotFoundException if no user exists with the given ID
      */
     public void updateLastLogin(@NonNull UUID userId) {
         User existingUser = getUserById(userId);
@@ -128,14 +167,27 @@ public class UserService {
     }
 
     /**
-     * Get all users who haven't logged in before a certain date
+     * Retrieves all users who haven't logged in since a specified date.
+     * Useful for identifying inactive users for cleanup or re-engagement.
+     * 
+     * @param date the cutoff date - users with last login before this date are considered inactive
+     * @return a list of users who haven't logged in since the specified date
      */
     public List<User> getInactiveUsersSince(@NonNull LocalDateTime date) {
         return userRepository.findByLastLoginBefore(date);
     }
 
     /**
-     * Update user excluding password
+     * Updates user information excluding password.
+     * At least one field must be provided for update.
+     * Validates email uniqueness and prevents setting duplicate values.
+     * 
+     * @param userId the UUID of the user to update
+     * @param userDto the update data containing new email, name, and/or username
+     * @return the updated user
+     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws InvalidUserUpdateException if no fields provided or email unchanged
+     * @throws UserAlreadyExistsException if email is already in use by another user
      */
     public User updateUser(@NonNull UUID userId, @NonNull UserDto.Update userDto) {
         boolean emailProvided = userDto.email() != null && !userDto.email().trim().isEmpty();
@@ -171,7 +223,14 @@ public class UserService {
     }
 
     /**
-     * Update user password
+     * Updates a user's password with proper validation.
+     * Validates current password, ensures new password is different, and confirms password match.
+     * 
+     * @param userId the UUID of the user whose password to update
+     * @param userDto the password change data containing current, new, and confirmation passwords
+     * @return the updated user
+     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws InvalidPasswordChangeException if current password is wrong, new password same as current, or passwords don't match
      */
     // FIXME: Add password encoding when adding auth
     public User updateUserPassword(@NonNull UUID userId, @NonNull UserDto.ChangePassword userDto) {
@@ -191,7 +250,11 @@ public class UserService {
     }
 
     /**
-     * Delete user
+     * Deletes a user from the system.
+     * This will cascade delete all associated data (decks, uploads, etc.) due to JPA cascade settings.
+     * 
+     * @param userId the UUID of the user to delete
+     * @throws UserNotFoundException if no user exists with the given ID
      */
     public void deleteUser(@NonNull UUID userId) {
         getUserById(userId);

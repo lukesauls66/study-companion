@@ -20,7 +20,10 @@ public class SessionCacheService {
     private CachedDecksRepository cachedDecksRepository;
     
     /**
-     * Logout user and cleanup both session and cache
+     * Logs out a user by removing their session and clearing their cached data.
+     * Performs complete cleanup of both Redis session and cache stores.
+     * 
+     * @param userId the UUID of the user to log out
      */
     public void logout(@NonNull UUID userId) {
         sessionRepository.deleteByUserId(userId);
@@ -28,8 +31,11 @@ public class SessionCacheService {
     }
     
     /**
-     * Validate session and cleanup orphaned cache if needed
-     * @return true if user has valid session, false otherwise
+     * Validates a user's session and performs cleanup if session is invalid or expired.
+     * Automatically removes orphaned cache data when session is not found or expired.
+     * 
+     * @param userId the UUID of the user whose session to validate
+     * @return true if user has valid, non-expired session; false otherwise
      */
     public boolean validateSessionAndCleanupCache(@NonNull UUID userId) {
         Optional<Session> session = sessionRepository.findByUserId(userId);
@@ -47,7 +53,12 @@ public class SessionCacheService {
     }
     
     /**
-     * Get user's cached decks only if they have valid session
+     * Retrieves a user's cached decks only if they have a valid session.
+     * Performs session validation first and returns empty if session is invalid.
+     * This ensures cached data is only accessible with valid authentication.
+     * 
+     * @param userId the UUID of the user whose cached decks to retrieve
+     * @return Optional containing cached decks if session is valid, empty otherwise
      */
     public Optional<CachedDecks> getCachedDecksIfSessionValid(@NonNull UUID userId) {
         if (!validateSessionAndCleanupCache(userId)) {
