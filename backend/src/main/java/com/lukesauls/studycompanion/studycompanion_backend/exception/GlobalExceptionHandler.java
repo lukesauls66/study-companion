@@ -61,4 +61,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidCardCreation(InvalidCardCreationException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(CardNotFoundException.class)
+    public ResponseEntity<String> handleCardNotFound(CardNotFoundException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
