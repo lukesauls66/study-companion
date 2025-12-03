@@ -51,4 +51,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidDeckUpdate(InvalidDeckUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(InvalidCardUpdateException.class)
+    public ResponseEntity<String> handleInvalidCardUpdate(InvalidCardUpdateException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCardCreationException.class)
+    public ResponseEntity<String> handleInvalidCardCreation(InvalidCardCreationException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
