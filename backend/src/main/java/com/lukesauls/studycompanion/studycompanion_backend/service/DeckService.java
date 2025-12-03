@@ -60,6 +60,7 @@ public class DeckService {
     /**
      * Get all decks
      */
+    //FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Deck> getAllDecks() {
         return deckRepository.findAll();
     }
@@ -122,6 +123,7 @@ public class DeckService {
     /**
      * Delete all decks belonging to a user
      */
+    //FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserDecks(@NonNull UUID userId) {
         deckRepository.deleteByUserId(userId);
     }
