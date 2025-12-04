@@ -66,4 +66,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleCardNotFound(CardNotFoundException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(UnauthorizedCardAccessException.class)
+    public ResponseEntity<String> handleUnauthorizedCardAccess(UnauthorizedCardAccessException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
