@@ -46,7 +46,7 @@ public class CardService {
      * @throws UnauthorizedDeckAccessException if the requesting user is not the deck owner
      */
     @SuppressWarnings("null")
-    public @NonNull Card createCard(@NonNull CardDto.Create cardDto, String imageUrl, @NonNull CardCreationType creationType, @NonNull UUID requestingUserId) {
+    public @NonNull Card createCard(@NonNull CardDto.Create cardDto, @NonNull CardCreationType creationType, @NonNull UUID requestingUserId) {
         Deck deck = deckService.getDeckById(cardDto.deckId());
 
         if (!deck.getUser().getId().equals(requestingUserId)) {
@@ -61,7 +61,12 @@ public class CardService {
             throw new InvalidCardCreationException("Answer cannot be empty");
         }
 
-        Card card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType);
+        Card card;
+        if (cardDto.imageUrl() == null) {
+            card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType);
+        } else {
+            card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType, cardDto.imageUrl());
+        }
 
         deck.addCard(card);
 
