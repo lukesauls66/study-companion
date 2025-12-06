@@ -71,4 +71,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUnauthorizedCardAccess(UnauthorizedCardAccessException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(UnauthorizedUploadAccessException.class)
+    public ResponseEntity<String> handleUnauthorizedUploadAccess(UnauthorizedUploadAccessException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidUploadCreationException.class)
+    public ResponseEntity<String> handleInvalidUploadCreation(InvalidUploadCreationException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
