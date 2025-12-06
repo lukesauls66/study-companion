@@ -141,6 +141,10 @@ public class User {
         return decks;
     }
 
+    public List<Upload> getUploads() {
+        return uploads;
+    }
+
     //Helpers for managing bi-directional relationship
     public void addDeck(Deck deck) {
         decks.add(deck);

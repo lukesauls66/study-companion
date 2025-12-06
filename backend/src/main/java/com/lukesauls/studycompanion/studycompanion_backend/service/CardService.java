@@ -27,9 +27,6 @@ public class CardService {
 
     @Autowired 
     private DeckService deckService;
-
-    // @Autowired
-    // private UserService userService;
     
     /**
      * Create a new card for the specified deck.

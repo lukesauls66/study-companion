@@ -81,4 +81,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidUploadCreation(InvalidUploadCreationException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(UploadNotFoundException.class)
+    public ResponseEntity<String> handleUploadNotFound(UploadNotFoundException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 }
