@@ -86,4 +86,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUploadNotFound(UploadNotFoundException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+
+    @ExceptionHandler(InvalidSessionParameterException.class)
+    public ResponseEntity<String> handleInvalidSessionParameter(InvalidSessionParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class})
+    public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
+        return ResponseEntity.badRequest().body("Internal server error");
+    }
 }
