@@ -11,6 +11,7 @@ import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUser
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserAlreadyExistsException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.UserOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
 import com.lukesauls.studycompanion.studycompanion_backend.repository.postgres.UserRepository;
@@ -49,14 +50,24 @@ public class UserService {
         if (userDto.password().trim().isEmpty()) {
             throw new InvalidUserCreationException("Password cannot be empty");
         }
-
-        if (userRepository.findByEmail(userDto.email()).isPresent()) {
-            throw new UserAlreadyExistsException("User with this email already exists");
+        
+        try {
+            if (userRepository.existsByEmail(userDto.email())) {
+                throw new UserAlreadyExistsException("User with this email already exists");
+            }
+        } catch (UserAlreadyExistsException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to check email uniqueness", e);
         }
 
-        User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(), userDto.password().trim());
-
-        return userRepository.save(user);
+        try {
+            User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(), userDto.password().trim());
+    
+            return userRepository.save(user);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to create user", e);
+        }
     }
 
     /**
@@ -68,11 +79,17 @@ public class UserService {
      */
     @SuppressWarnings("null")
     public @NonNull User getUserById(@NonNull UUID id) {
-        if (!userRepository.existsById(id)) {
-            throw new UserNotFoundException("User with ID " + id + " not found");
-        }
+        try {
+            if (!userRepository.existsById(id)) {
+                throw new UserNotFoundException("User with ID " + id + " not found");
+            }
 
-        return userRepository.findById(id).get();
+            return userRepository.findById(id).get();
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch user", e);
+        }
     }
 
     /**
@@ -83,11 +100,17 @@ public class UserService {
      * @throws UserNotFoundException if no user exists with the given email
      */
     public User getUserByEmail(@NonNull String email) {
-        if (!userRepository.existsByEmail(email)) {
-            throw new UserNotFoundException("User with that email not found");
-        }
+        try {
+            if (!userRepository.existsByEmail(email)) {
+                throw new UserNotFoundException("User with that email not found");
+            }
 
-        return userRepository.findByEmail(email).get();
+            return userRepository.findByEmail(email).get();
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch user", e);
+        }        
     }
 
     /**
@@ -102,7 +125,11 @@ public class UserService {
             throw new UserNotFoundException("User with that username not found");
         }
 
-        return userRepository.findByUsername(username).get();
+        try {
+            return userRepository.findByUsername(username).get();
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch user", e);
+        }
     }
 
     /**
@@ -112,7 +139,11 @@ public class UserService {
      * @return a list of all users in the system
      */
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        try {
+            return userRepository.findAll();
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch users", e);
+        }
     }
 
     /**
@@ -123,7 +154,11 @@ public class UserService {
      * @return a list of users with the specified role
      */
     public List<User> getAllUsersOfARole(@NonNull Role role) {
-        return userRepository.findByRole(role);
+        try {
+            return userRepository.findByRole(role);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch users of " + role + " role", e);
+        }
     }
 
     /**
@@ -135,10 +170,14 @@ public class UserService {
      * @throws UserNotFoundException if no user exists with the given ID
      */
     public User verifyUser(@NonNull UUID userId) {
-        User existingUser = getUserById(userId);
-        existingUser.setVerified(true);
-
-        return userRepository.save(existingUser);
+        try {
+            User existingUser = getUserById(userId);
+            existingUser.setVerified(true);
+    
+            return userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to verify user", e);
+        }
     }
 
     /**
@@ -149,7 +188,11 @@ public class UserService {
      * @return a list of users with the specified verification status
      */
     public List<User> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
-        return userRepository.findByIsVerified(isVerified);
+        try {
+            return userRepository.findByIsVerified(isVerified);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to fetch all verified users", e);
+        }
     }
 
     /**
@@ -160,10 +203,14 @@ public class UserService {
      * @throws UserNotFoundException if no user exists with the given ID
      */
     public void updateLastLogin(@NonNull UUID userId) {
-        User existingUser = getUserById(userId);
-        existingUser.setLastLogin();
-
-        userRepository.save(existingUser);
+        try {
+            User existingUser = getUserById(userId);
+            existingUser.setLastLogin();
+    
+            userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to update user's last login", e);
+        }
     }
 
     /**
@@ -174,7 +221,11 @@ public class UserService {
      * @return a list of users who haven't logged in since the specified date
      */
     public List<User> getInactiveUsersSince(@NonNull LocalDateTime date) {
-        return userRepository.findByLastLoginBefore(date);
+        try {
+            return userRepository.findByLastLoginBefore(date);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to get users that haven't logged in since " + date, e);
+        }
     }
 
     /**
@@ -199,27 +250,37 @@ public class UserService {
         }
 
         User existingUser = getUserById(userId);
-
-        if (userDto.email() != null) {
-            if (userDto.email().equals(existingUser.getEmail())) {
-                throw new InvalidUserUpdateException("Email is already set to this value");
+        
+            if (userDto.email() != null) {
+                if (userDto.email().equals(existingUser.getEmail())) {
+                    throw new InvalidUserUpdateException("Email is already set to this value");
+                }
+                try {
+                    if (userRepository.findByEmail(userDto.email()).isPresent()) {
+                        throw new UserAlreadyExistsException("User with this email already exists");
+                    }
+                } catch (UserAlreadyExistsException e) {
+                    throw e;
+                } catch (Exception e) {
+                    throw new UserOperationException("Failed to check email uniqueness", e);
+                }
+                
+                existingUser.setEmail(userDto.email().trim());
             }
-            if (userRepository.findByEmail(userDto.email()).isPresent()) {
-                throw new UserAlreadyExistsException("User with this email already exists");
+    
+            if (userDto.name() != null) {
+                existingUser.setName(userDto.name().trim());
             }
-
-            existingUser.setEmail(userDto.email().trim());
+            
+            if (userDto.username() != null) {
+                existingUser.setUsername(userDto.username().trim());
+            }
+            
+        try {
+            return userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to update user", e);
         }
-
-        if (userDto.name() != null) {
-            existingUser.setName(userDto.name().trim());
-        }
-
-        if (userDto.username() != null) {
-            existingUser.setUsername(userDto.username().trim());
-        }
-
-        return userRepository.save(existingUser);
     }
 
     /**
@@ -246,7 +307,11 @@ public class UserService {
 
         existingUser.setPassword(userDto.newPassword().trim());
 
-        return userRepository.save(existingUser);
+        try {
+            return userRepository.save(existingUser);
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to update user password", e);
+        }
     }
 
     /**
@@ -257,8 +322,14 @@ public class UserService {
      * @throws UserNotFoundException if no user exists with the given ID
      */
     public void deleteUser(@NonNull UUID userId) {
-        getUserById(userId);
-
-        userRepository.deleteById(userId);
+        try {
+            getUserById(userId);
+    
+            userRepository.deleteById(userId);
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new UserOperationException("Failed to delete user", e);
+        }
     }
 }
