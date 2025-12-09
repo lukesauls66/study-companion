@@ -92,6 +92,11 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
+    @ExceptionHandler(InvalidUserParameterException.class)
+    public ResponseEntity<String> handleInvalidUserParameter(InvalidUserParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
     @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class})
     public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
         return ResponseEntity.badRequest().body("Internal server error");

@@ -56,7 +56,7 @@ public class SessionCacheService {
             logger.info("Successfully created session {} for user {}", savedSession.getSessionId(), userId);
             return savedSession;
         } catch (Exception e) {
-            logger.error("Failed to create session for user {}: {}", userId, e.getMessage());
+            logger.error("Failed to create session for user: {}", e.getMessage());
             throw new SessionOperationException("Failed to create session for user: " + userId, e);
         }
     }
