@@ -8,9 +8,14 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.CardDto;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.UnauthorizedCardAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.UnauthorizedDeckAccessException;
@@ -18,36 +23,54 @@ import com.lukesauls.studycompanion.studycompanion_backend.model.CardCreationTyp
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Card;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
 import com.lukesauls.studycompanion.studycompanion_backend.repository.postgres.CardRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class CardService {
 
-    @Autowired 
+    private static final Logger logger = LoggerFactory.getLogger(CardService.class);
+
+    @Autowired
     private CardRepository cardRepository;
 
-    @Autowired 
+    @Autowired
     private DeckService deckService;
-    
+
     /**
      * Create a new card for the specified deck.
      * Validates that the question and answer fields are not empty.
      * Maintains bidirectional relationship by adding card to deck's collection
      * 
-     * @param cardDto the card creation data containing deckId, question, and answer
-     * @param imageUrl the optional imageUrl to display the image on the card
-     * @param creationType the creation type: MANUAL_UPLOAD or AI_PARSED
+     * @param cardDto          the card creation data containing deckId, question,
+     *                         and answer
+     * @param imageUrl         the optional imageUrl to display the image on the
+     *                         card
+     * @param creationType     the creation type: MANUAL_UPLOAD or AI_PARSED
      * @param requestingUserId the UUID of the user making the request
      * @return the created card with generated ID and timestamps
-     * @throws InvalidCardCreationException if question or answer is blank
-     * @throws DeckNotFoundException if the specified deck does not exist
-     * @throws UnauthorizedDeckAccessException if the requesting user is not the deck owner
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws InvalidDeckParameterException   if the deckId is invalid
+     * @throws InvalidCardCreationException    if question or answer is blank
+     * @throws DeckNotFoundException           if the specified deck does not exist
+     * @throws UnauthorizedDeckAccessException if the requesting user is not the
+     *                                         deck owner
+     * @throws DeckOperationException          if deck operations fail
+     * @throws CardOperationException          if server error occurs
      */
-    @SuppressWarnings("null")
-    public @NonNull Card createCard(@NonNull CardDto.Create cardDto, @NonNull CardCreationType creationType, @NonNull UUID requestingUserId) {
-        Deck deck = deckService.getDeckById(cardDto.deckId());
+    @SuppressWarnings({ "null", "unused" })
+    public @NonNull Card createCard(@NonNull CardDto.Create cardDto, @NonNull CardCreationType creationType,
+            @NonNull UUID requestingUserId) {
+        if (cardDto == null) {
+            throw new InvalidCardParameterException("Card data transfer object cannot be null");
+        }
 
-        if (!deck.getUser().getId().equals(requestingUserId)) {
-            throw new UnauthorizedDeckAccessException("You can only add cards to your own decks");
+        if (creationType == null) {
+            throw new InvalidCardParameterException("creationType cannot be null");
+        }
+
+        if (requestingUserId == null) {
+            throw new InvalidCardParameterException("Requesting userId cannot be null");
         }
 
         if (cardDto.question().trim().isEmpty()) {
@@ -58,16 +81,37 @@ public class CardService {
             throw new InvalidCardCreationException("Answer cannot be empty");
         }
 
-        Card card;
-        if (cardDto.imageUrl() == null) {
-            card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType);
-        } else {
-            card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType, cardDto.imageUrl());
+        try {
+            Deck deck = deckService.getDeckById(cardDto.deckId());
+
+            logger.debug("Verifying that the requesting user can add cards to this deck: {}", deck.getTitle());
+            if (!deck.getUser().getId().equals(requestingUserId)) {
+                throw new UnauthorizedDeckAccessException("You can only add cards to your own decks");
+            }
+
+            Card card;
+            if (cardDto.imageUrl() == null) {
+                logger.debug("Creating card without image");
+                card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType);
+            } else {
+                logger.debug("Creating card with image");
+                card = new Card(deck, cardDto.question().trim(), cardDto.answer().trim(), creationType,
+                        cardDto.imageUrl());
+            }
+
+            logger.debug("Adding card to parent deck");
+            deck.addCard(card);
+
+            Card newCard = cardRepository.save(card);
+            logger.info("Successfully created new card and added to parent deck");
+            return newCard;
+        } catch (DeckException e) {
+            logger.error("Card creation failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to create card: {}", e.getMessage());
+            throw new CardOperationException("Failed to create card", e);
         }
-
-        deck.addCard(card);
-
-        return cardRepository.save(card);
     }
 
     /**
@@ -75,15 +119,32 @@ public class CardService {
      * 
      * @param id the UUID of the card to retrieve
      * @return the card with the specified ID
-     * @throws CardNotFoundException if no card exists with the given ID
+     * @throws InvalidCardParameterException if any nonnull arg is null
+     * @throws CardNotFoundException         if no card exists with the given ID
+     * @throws CardOperationException        if server error occurs
      */
-    @SuppressWarnings("null")
+    @SuppressWarnings({ "null", "unused" })
     public @NonNull Card getCardById(@NonNull UUID id) {
-        if (!cardRepository.existsById(id)) {
-            throw new CardNotFoundException("Card with ID " + id + " not found");
+        if (id == null) {
+            throw new InvalidCardParameterException("id cannot be null");
         }
 
-        return cardRepository.findById(id).get();
+        try {
+            logger.debug("Checking if card exists");
+            if (!cardRepository.existsById(id)) {
+                throw new CardNotFoundException("Card with ID " + id + " not found");
+            }
+
+            Card card = cardRepository.findById(id).get();
+            logger.info("Successfully found card by provided id");
+            return card;
+        } catch (CardNotFoundException e) {
+            logger.error("Card does not exist with provided id: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to fetch card by provided id: {}", e.getMessage());
+            throw new CardOperationException("Failed to fetch card by provided id", e);
+        }
     }
 
     /**
@@ -91,10 +152,19 @@ public class CardService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all cards in the system
+     * @throws CardOperationException if server error occurs
      */
-    //FIXME: Add requestUUID and only fetch if UUID belongs to an admin
+    // FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Card> getAllCards() {
-        return cardRepository.findAll();
+        try {
+            logger.debug("Searching for all cards");
+            List<Card> cards = cardRepository.findAll();
+            logger.info("Successfully fetched all cards");
+            return cards;
+        } catch (Exception e) {
+            logger.error("Failed to fetch all cards: {}", e.getMessage());
+            throw new CardOperationException("Failed to fetch all cards", e);
+        }
     }
 
     /**
@@ -102,9 +172,24 @@ public class CardService {
      * 
      * @param deckId the UUID of the deck whose cards to retrieve
      * @return a list of cards owned by the deck, empty if deck has no cards
+     * @throws InvalidCardParameterException if any nonnull arg is null
+     * @throws CardOperationException        if server error occurs
      */
+    @SuppressWarnings("unused")
     public List<Card> getAllDeckCards(@NonNull UUID deckId) {
-        return cardRepository.findByDeckId(deckId);
+        if (deckId == null) {
+            throw new InvalidCardParameterException("deckId cannot be null");
+        }
+
+        try {
+            logger.debug("Fetching all cards belonging to the provided deckId");
+            List<Card> cards = cardRepository.findByDeckId(deckId);
+            logger.info("Successfully fetched all cards belonging to the provided deckId");
+            return cards;
+        } catch (Exception e) {
+            logger.error("Failed to fetch all cards belonging to the provided deckId: {}", e.getMessage());
+            throw new CardOperationException("Failed to fetch all cards belonging to the provided deckId", e);
+        }
     }
 
     /**
@@ -112,9 +197,24 @@ public class CardService {
      * 
      * @param deckId the UUID of the deck whose card count to retrieve
      * @return the number of cards owned by the deck
+     * @throws InvalidCardParameterException if any nonnull arg is null
+     * @throws CardOperationException        if server error occurs
      */
+    @SuppressWarnings("unused")
     public long getCountOfAllDeckCards(@NonNull UUID deckId) {
-        return cardRepository.countByDeckId(deckId);
+        if (deckId == null) {
+            throw new InvalidCardParameterException("deckId cannot be null");
+        }
+
+        try {
+            logger.debug("Calculating number of cards belonging to the provided deckId");
+            long cardCount = cardRepository.countByDeckId(deckId);
+            logger.info("Successfully calculated {} cards belonging to the provided deckId", cardCount);
+            return cardCount;
+        } catch (Exception e) {
+            logger.error("Failed to calculate number of cards belonging to the provided deckId: {}", e.getMessage());
+            throw new CardOperationException("Failed to calculate number of cards belonging to the provided deckId", e);
+        }
     }
 
     /**
@@ -122,15 +222,33 @@ public class CardService {
      * only the card/deck owner can perform this operation.
      * At least one field must be provided for update.
      * 
-     * @param cardId the UUID of the card to update
-     * @param cardDto the update data containing the new question, answer, and/or imageUrl
+     * @param cardId           the UUID of the card to update
+     * @param cardDto          the update data containing the new question, answer,
+     *                         and/or imageUrl
      * @param requestingUserId the UUID of the user making the request
      * @return the updated card
-     * @throws CardNotFoundException if the card does not exist
-     * @throws InvalidCardUpdateException if no valid fields are provided for update
-     * @throws UnauthorizedCardAccessException if the requesting user is not the card/deck owner
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws CardNotFoundException           if the card does not exist
+     * @throws InvalidCardUpdateException      if no valid fields are provided for
+     *                                         update
+     * @throws UnauthorizedCardAccessException if the requesting user is not the
+     *                                         card/deck owner
+     * @throws CardOperationException          if server error occurs
      */
+    @SuppressWarnings("unused")
     public Card updateCard(@NonNull UUID cardId, @NonNull CardDto.Update cardDto, @NonNull UUID requestingUserId) {
+        if (cardId == null) {
+            throw new InvalidCardParameterException("cardId cannot be null");
+        }
+
+        if (cardDto == null) {
+            throw new InvalidCardParameterException("Card data transfer object cannot be null");
+        }
+
+        if (requestingUserId == null) {
+            throw new InvalidCardParameterException("Requesting userId cannot be null");
+        }
+
         boolean isQuestionProvided = cardDto.question() != null && !cardDto.question().trim().isEmpty();
         boolean isAnswerProvided = cardDto.answer() != null && !cardDto.answer().trim().isEmpty();
         boolean isImageUrlProvided = cardDto.imageUrl() != null && !cardDto.imageUrl().trim().isEmpty();
@@ -139,24 +257,37 @@ public class CardService {
             throw new InvalidCardUpdateException("At least one field must be provided");
         }
 
-        Card existingCard = getCardById(cardId);
+        try {
+            Card existingCard = getCardById(cardId);
 
-        if (!existingCard.getDeck().getUser().getId().equals(requestingUserId)) {
-            throw new UnauthorizedCardAccessException("You can only update your own cards");
-        }
+            logger.debug("Verifying request user is authorized to update this card");
+            if (!existingCard.getDeck().getUser().getId().equals(requestingUserId)) {
+                throw new UnauthorizedCardAccessException("You can only update your own cards");
+            }
 
-        if (isQuestionProvided) {
-            existingCard.setQuestion(cardDto.question().trim());
-        }
+            if (isQuestionProvided) {
+                existingCard.setQuestion(cardDto.question().trim());
+            }
 
-        if (isAnswerProvided) {
-            existingCard.setAnswer(cardDto.answer().trim());
-        }
+            if (isAnswerProvided) {
+                existingCard.setAnswer(cardDto.answer().trim());
+            }
 
-        if (isImageUrlProvided) {
-            existingCard.setImageUrl(cardDto.imageUrl().trim());
+            if (isImageUrlProvided) {
+                existingCard.setImageUrl(cardDto.imageUrl().trim());
+            }
+
+            logger.debug("Updating card");
+            Card updatedCard = cardRepository.save(existingCard);
+            logger.info("Successfully updated card");
+            return updatedCard;
+        } catch (CardException e) {
+            logger.error("Card update failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to update card: {}", e.getMessage());
+            throw new CardOperationException("Failed to update card", e);
         }
-        return cardRepository.save(existingCard);
     }
 
     /**
@@ -164,22 +295,47 @@ public class CardService {
      * Only the card owner can perform this action.
      * Maintains bidirectional relationship by removing card from deck's collection.
      * 
-     * @param cardId the UUID of the card to delete
+     * @param cardId           the UUID of the card to delete
      * @param requestingUserId the UUID of the user making the request
-     * @throws CardNotFoundException if the card does not exist
-     * @throws UnauthorizedCardAccessException if the requesting user is not the card owner
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws CardNotFoundException           if the card does not exist
+     * @throws UnauthorizedCardAccessException if the requesting user is not the
+     *                                         card owner
+     * @throws CardOperationException          if server error occurs
      */
+    @SuppressWarnings("unused")
     public void deleteCardById(@NonNull UUID cardId, @NonNull UUID requestingUserId) {
-        Card card = getCardById(cardId);
-
-        if (!card.getDeck().getUser().getId().equals(requestingUserId)) {
-            throw new UnauthorizedCardAccessException("You can only delete your own cards");
+        if (cardId == null) {
+            throw new InvalidCardParameterException("cardId cannot be null");
         }
 
-        Deck deck = card.getDeck();
-        deck.removeCard(card);
+        if (requestingUserId == null) {
+            throw new InvalidCardParameterException("Requesting userId cannot be null");
+        }
 
-        cardRepository.deleteById(cardId);
+        try {
+            Card card = getCardById(cardId);
+
+            logger.debug("Verifying request user is authorized to delete this card");
+            if (!card.getDeck().getUser().getId().equals(requestingUserId)) {
+                throw new UnauthorizedCardAccessException("You can only delete your own cards");
+            }
+
+            logger.debug("Fetching deck that owns this card");
+            Deck deck = card.getDeck();
+            logger.debug("Disconnecting the bidirectional connection between this card and its parent deck");
+            deck.removeCard(card);
+
+            logger.debug("Removed connection, deleting card now");
+            cardRepository.deleteById(cardId);
+            logger.info("Successfully deleted card");
+        } catch (CardException e) {
+            logger.error("Card deletion failed: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to delete card by the provided id: {}", e.getMessage());
+            throw new CardOperationException("Failed to delete card by the provided id", e);
+        }
     }
 
     /**
@@ -189,14 +345,34 @@ public class CardService {
      * Currently unrestricted - should be limited to admin users in production
      * 
      * @param deckId the UUID of the deck whose cards to delete
-     * @throws DeckNotFoundException if the specified deck does not exist
+     * @throws InvalidCardParameterException if any nonnull arg is null
+     * @throws InvalidDeckParameterException if the deckId is invalid
+     * @throws DeckNotFoundException         if the specified deck does not exist
+     * @throws DeckOperationException        if deck operations fail
+     * @throws CardOperationException        if server error occurs
      */
-    //FIXME: Add requestUUID and only delete if UUID belongs to an admin
+    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
+    @SuppressWarnings("unused")
     public void deleteAllDeckCards(@NonNull UUID deckId) {
-        Deck deck = deckService.getDeckById(deckId);
+        if (deckId == null) {
+            throw new InvalidCardParameterException("deckId cannot be null");
+        }
 
-        deck.getCards().clear();
+        try {
+            Deck deck = deckService.getDeckById(deckId);
 
-        cardRepository.deleteByDeckId(deckId);
+            logger.debug("Clearing deck's cards");
+            deck.getCards().clear();
+
+            logger.debug("Deleting all cards belonging to the associated deck");
+            cardRepository.deleteByDeckId(deckId);
+            logger.info("Successfully deleted all cards from provided deck");
+        } catch (DeckException e) {
+            logger.error("Card deletions failed due to deck issue: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to delete all cards from the provided deck: {}", e.getMessage());
+            throw new CardOperationException("Failed to delete all cards from the provided deck", e);
+        }
     }
 }

@@ -291,7 +291,7 @@ public class DeckService {
 
             logger.debug("Removed connection, deleting deck now");
             deckRepository.deleteById(deckId);
-            logger.info("Successfully");
+            logger.info("Successfully deleted deck");
         } catch (DeckException e) {
             logger.error("Deck deletion");
             throw e;

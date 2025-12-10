@@ -5,7 +5,9 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.card.UnauthorizedCardAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckNotFoundException;
@@ -126,7 +128,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class})
+    @ExceptionHandler(InvalidCardParameterException.class)
+    public ResponseEntity<String> handleInvalidCardParameter(InvalidCardParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class, CardOperationException.class})
     public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
         return ResponseEntity.badRequest().body("Internal server error");
     }
