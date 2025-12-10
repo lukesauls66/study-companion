@@ -38,8 +38,9 @@ public class UserService {
      *                password
      * @return the created user with generated ID and timestamps
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws InvalidUserCreationException if any required field is empty
-     * @throws UserAlreadyExistsException   if a user with the email already exists
+     * @throws InvalidUserCreationException  if any required field is empty
+     * @throws UserAlreadyExistsException    if a user with the email already exists
+     * @throws UserOperationException        if server error occurs
      */
     // FIXME: Add password encoding when adding auth
     @SuppressWarnings("unused")
@@ -79,7 +80,8 @@ public class UserService {
 
         try {
             logger.debug("Creating user");
-            User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),userDto.password().trim());
+            User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),
+                    userDto.password().trim());
 
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
@@ -96,9 +98,10 @@ public class UserService {
      * @param id the UUID of the user to retrieve
      * @return the user with the specified ID
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws UserNotFoundException         if no user exists with the given ID
+     * @throws UserOperationException        if server error occurs
      */
-    @SuppressWarnings({"null", "unused"})
+    @SuppressWarnings({ "null", "unused" })
     public @NonNull User getUserById(@NonNull UUID id) {
         if (id == null) {
             throw new InvalidUserParameterException("ID cannot be null");
@@ -111,7 +114,7 @@ public class UserService {
             }
 
             User foundUser = userRepository.findById(id).get();
-            logger.info("User found with provided id"); 
+            logger.info("User found with provided id");
             return foundUser;
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
@@ -128,7 +131,8 @@ public class UserService {
      * @param email the email address of the user to retrieve
      * @return the user with the specified email
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given email
+     * @throws UserNotFoundException         if no user exists with the given email
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public User getUserByEmail(@NonNull String email) {
@@ -160,7 +164,9 @@ public class UserService {
      * @param username the username of the user to retrieve
      * @return the user with the specified username
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given username
+     * @throws UserNotFoundException         if no user exists with the given
+     *                                       username
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public User getUserByUsername(@NonNull String username) {
@@ -191,6 +197,7 @@ public class UserService {
      * Should typically be restricted to admin users in production.
      * 
      * @return a list of all users in the system
+     * @throws UserOperationException if server error occurs
      */
     public List<User> getAllUsers() {
         try {
@@ -211,6 +218,7 @@ public class UserService {
      * @param role the role to filter users by
      * @return a list of users with the specified role
      * @throws InvalidUserParameterException if any nonnull arg is null
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public List<User> getAllUsersOfARole(@NonNull Role role) {
@@ -236,7 +244,8 @@ public class UserService {
      * @param userId the UUID of the user to verify
      * @return the updated user with verified status set to true
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws UserNotFoundException         if no user exists with the given ID
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public User verifyUser(@NonNull UUID userId) {
@@ -268,6 +277,7 @@ public class UserService {
      * 
      * @param isVerified true to get verified users, false to get unverified users
      * @return a list of users with the specified verification status
+     * @throws UserOperationException if server error occurs
      */
     public List<User> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         try {
@@ -287,7 +297,8 @@ public class UserService {
      * 
      * @param userId the UUID of the user whose last login to update
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws UserNotFoundException         if no user exists with the given ID
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public void updateLastLogin(@NonNull UUID userId) {
@@ -320,6 +331,7 @@ public class UserService {
      *             considered inactive
      * @return a list of users who haven't logged in since the specified date
      * @throws InvalidUserParameterException if any nonnull arg is null
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public List<User> getInactiveUsersSince(@NonNull LocalDateTime date) {
@@ -347,15 +359,18 @@ public class UserService {
      * @param userDto the update data containing new email, name, and/or username
      * @return the updated user
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException      if no user exists with the given ID
-     * @throws InvalidUserUpdateException if no fields provided or email unchanged
-     * @throws UserAlreadyExistsException if email is already in use by another user
+     * @throws UserNotFoundException         if no user exists with the given ID
+     * @throws InvalidUserUpdateException    if no fields provided or email
+     *                                       unchanged
+     * @throws UserAlreadyExistsException    if email is already in use by another
+     *                                       user
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public User updateUser(@NonNull UUID userId, @NonNull UserDto.Update userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
-        } 
+        }
 
         if (userDto == null) {
             throw new InvalidUserParameterException("User data transfer object cannot be null");
@@ -423,11 +438,12 @@ public class UserService {
      * @param userDto the password change data containing current, new, and
      *                confirmation passwords
      * @return the updated user
-     * @throws InvalidUserParameterException if any nonnull arg is null
+     * @throws InvalidUserParameterException  if any nonnull arg is null
      * @throws UserNotFoundException          if no user exists with the given ID
      * @throws InvalidPasswordChangeException if current password is wrong, new
      *                                        password same as current, or passwords
      *                                        don't match
+     * @throws UserOperationException         if server error occurs
      */
     // FIXME: Add password encoding when adding auth
     @SuppressWarnings("unused")
@@ -435,14 +451,14 @@ public class UserService {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
-         
+
         if (userDto == null) {
             throw new InvalidUserParameterException("User data transfer object cannot be null");
         }
 
         try {
             logger.debug("Searching for user by provided id");
-            User existingUser = getUserById(userId);  
+            User existingUser = getUserById(userId);
             logger.debug("Found user with provided id");
 
             if (!userDto.currPassword().equals(existingUser.getPassword())) {
@@ -475,7 +491,8 @@ public class UserService {
      * 
      * @param userId the UUID of the user to delete
      * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException if no user exists with the given ID
+     * @throws UserNotFoundException         if no user exists with the given ID
+     * @throws UserOperationException        if server error occurs
      */
     @SuppressWarnings("unused")
     public void deleteUser(@NonNull UUID userId) {
