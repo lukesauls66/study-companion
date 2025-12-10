@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.UUID;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UserDto;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidPasswordChangeException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserCreationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUserUpdateException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UserAlreadyExistsException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidPasswordChangeException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserAlreadyExistsException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserNotFoundException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
 

@@ -14,10 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.DeckDto;
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UserDto;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckNotFoundException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckCreationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckUpdateException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.InvalidDeckCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.InvalidDeckUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.UnauthorizedDeckAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
 

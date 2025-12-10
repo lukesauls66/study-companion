@@ -8,10 +8,10 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.UploadDto;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidUploadCreationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedUploadAccessException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UploadNotFoundException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.InvalidUploadCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UnauthorizedUploadAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UploadNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.UnauthorizedDeckAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Upload;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;

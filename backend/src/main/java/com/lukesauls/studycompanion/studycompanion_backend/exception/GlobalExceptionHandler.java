@@ -4,6 +4,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.UnauthorizedCardAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.InvalidDeckCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.InvalidDeckParameterException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.InvalidDeckUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.CacheOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.InvalidSessionParameterException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.SessionOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.InvalidUploadCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UnauthorizedUploadAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UploadNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidPasswordChangeException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserParameterException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserAlreadyExistsException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserOperationException;
+
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

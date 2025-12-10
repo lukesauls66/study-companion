@@ -5,9 +5,9 @@ import com.lukesauls.studycompanion.studycompanion_backend.model.redis.CachedDec
 import com.lukesauls.studycompanion.studycompanion_backend.model.redis.DeckCache;
 import com.lukesauls.studycompanion.studycompanion_backend.repository.redis.SessionRepository;
 import com.lukesauls.studycompanion.studycompanion_backend.repository.redis.CachedDecksRepository;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.SessionOperationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.CacheOperationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidSessionParameterException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.SessionOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.CacheOperationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.session.InvalidSessionParameterException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.lang.NonNull;

@@ -1,4 +1,4 @@
-package com.lukesauls.studycompanion.studycompanion_backend.exception;
+package com.lukesauls.studycompanion.studycompanion_backend.exception.session;
 
 public class SessionOperationException extends RuntimeException {
     public SessionOperationException(String message) {

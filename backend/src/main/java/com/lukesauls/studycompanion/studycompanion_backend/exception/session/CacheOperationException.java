@@ -1,6 +1,6 @@
-package com.lukesauls.studycompanion.studycompanion_backend.exception;
+package com.lukesauls.studycompanion.studycompanion_backend.exception.session;
 
-public class CacheOperationException extends RuntimeException {
+public class CacheOperationException extends SessionException {
     public CacheOperationException(String message) {
         super(message);
     }

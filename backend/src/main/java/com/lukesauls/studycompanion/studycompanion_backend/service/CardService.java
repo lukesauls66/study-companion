@@ -8,12 +8,12 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.CardDto;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.CardNotFoundException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckNotFoundException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidCardCreationException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidCardUpdateException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedCardAccessException;
-import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.CardNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.InvalidCardUpdateException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.card.UnauthorizedCardAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.deck.UnauthorizedDeckAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.CardCreationType;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Card;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
