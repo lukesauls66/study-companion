@@ -9,15 +9,23 @@ import org.springframework.stereotype.Service;
 
 import com.lukesauls.studycompanion.studycompanion_backend.dto.DeckDto;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.DeckOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.InvalidDeckUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.UnauthorizedDeckAccessException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.UserNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.UserOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.Deck;
 import com.lukesauls.studycompanion.studycompanion_backend.model.postgres.User;
 import com.lukesauls.studycompanion.studycompanion_backend.repository.postgres.DeckRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class DeckService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DeckService.class);
 
     @Autowired
     private DeckRepository deckRepository;
@@ -30,28 +38,41 @@ public class DeckService {
      * Validates that both title and description are not empty.
      * Maintains bidirectional relationship by adding deck to user's collection.
      * 
-     * @param deckDto the deck creation data containing userId, title, and description
+     * @param deckDto the deck creation data containing userId, title, and
+     *                description
      * @return the created deck with generated ID and timestamps
      * @throws InvalidDeckCreationException if title or description is blank
-     * @throws UserNotFoundException if the specified user does not exist
+     * @throws UserNotFoundException        if the specified user does not exist
      */
-    @SuppressWarnings("null")
+    @SuppressWarnings({"null", "unused"})
     public @NonNull Deck createDeck(@NonNull DeckDto.Create deckDto) {
-        User user = userService.getUserById(deckDto.userId());
-
-        if (deckDto.title().trim().isEmpty()) {
-            throw new InvalidDeckCreationException("Title cannot be empty");
+        if (deckDto == null) {
+            throw new InvalidDeckParameterException("Deck data transfer object cannot be null");
         }
 
-        if (deckDto.description().trim().isEmpty()) {
-            throw new InvalidDeckCreationException("Description cannot be empty");
+        try {
+            User user = userService.getUserById(deckDto.userId());
+    
+            if (deckDto.title().trim().isEmpty()) {
+                throw new InvalidDeckCreationException("Title cannot be empty");
+            }
+    
+            if (deckDto.description().trim().isEmpty()) {
+                throw new InvalidDeckCreationException("Description cannot be empty");
+            }
+    
+            Deck deck = new Deck(user, deckDto.title().trim(), deckDto.description().trim());
+    
+            user.addDeck(deck);
+    
+            return deckRepository.save(deck);   
+        } catch (UserNotFoundException | UserOperationException e) {
+            logger.error("Deck creation failed due to user issue: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to create a new deck: {}", e.getMessage());
+            throw new DeckOperationException("Failed to create a new deck", e);
         }
-
-        Deck deck = new Deck(user, deckDto.title().trim(), deckDto.description().trim());
-        
-        user.addDeck(deck);
-
-        return deckRepository.save(deck);
     }
 
     /**
@@ -76,7 +97,7 @@ public class DeckService {
      * 
      * @return a list of all decks in the system
      */
-    //FIXME: Add requestUUID and only fetch if UUID belongs to an admin
+    // FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Deck> getAllDecks() {
         return deckRepository.findAll();
     }
@@ -106,22 +127,25 @@ public class DeckService {
      * Only the deck owner can perform this operation.
      * At least one field must be provided for update.
      * 
-     * @param deckId the UUID of the deck to update
-     * @param deckDto the update data containing new title and/or description
+     * @param deckId           the UUID of the deck to update
+     * @param deckDto          the update data containing new title and/or
+     *                         description
      * @param requestingUserId the UUID of the user making the request
      * @return the updated deck
-     * @throws DeckNotFoundException if the deck does not exist
-     * @throws InvalidDeckUpdateException if no valid fields are provided for update
-     * @throws UnauthorizedDeckAccessException if the requesting user is not the deck owner
+     * @throws DeckNotFoundException           if the deck does not exist
+     * @throws InvalidDeckUpdateException      if no valid fields are provided for
+     *                                         update
+     * @throws UnauthorizedDeckAccessException if the requesting user is not the
+     *                                         deck owner
      */
     public Deck updateDeck(@NonNull UUID deckId, @NonNull DeckDto.Update deckDto, @NonNull UUID requestingUserId) {
         boolean titleProvided = deckDto.title() != null && !deckDto.title().trim().isEmpty();
         boolean descriptionProvided = deckDto.description() != null && !deckDto.description().trim().isEmpty();
-        
+
         if (!titleProvided && !descriptionProvided) {
             throw new InvalidDeckUpdateException("At least one field must be provided for update");
         }
-        
+
         Deck existingDeck = getDeckById(deckId);
 
         if (!existingDeck.getUser().getId().equals(requestingUserId)) {
@@ -144,10 +168,11 @@ public class DeckService {
      * Only the deck owner can perform this operation.
      * Maintains bidirectional relationship by removing deck from user's collection.
      * 
-     * @param deckId the UUID of the deck to delete
+     * @param deckId           the UUID of the deck to delete
      * @param requestingUserId the UUID of the user making the request
-     * @throws DeckNotFoundException if the deck does not exist
-     * @throws UnauthorizedDeckAccessException if the requesting user is not the deck owner
+     * @throws DeckNotFoundException           if the deck does not exist
+     * @throws UnauthorizedDeckAccessException if the requesting user is not the
+     *                                         deck owner
      */
     public void deleteDeckById(@NonNull UUID deckId, @NonNull UUID requestingUserId) {
         Deck deck = getDeckById(deckId);
@@ -171,12 +196,12 @@ public class DeckService {
      * @param userId the UUID of the user whose decks to delete
      * @throws UserNotFoundException if the specified user does not exist
      */
-    //FIXME: Add requestUUID and only delete if UUID belongs to an admin
+    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserDecks(@NonNull UUID userId) {
         User user = userService.getUserById(userId);
-        
+
         user.getDecks().clear();
-        
+
         deckRepository.deleteByUserId(userId);
     }
 }

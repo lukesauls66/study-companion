@@ -97,7 +97,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class})
+    @ExceptionHandler(InvalidDeckParameterException.class)
+    public ResponseEntity<String> handleInvalidDeckParameter(InvalidDeckParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class})
     public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
         return ResponseEntity.badRequest().body("Internal server error");
     }
