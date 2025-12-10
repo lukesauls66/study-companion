@@ -11,6 +11,7 @@ import com.lukesauls.studycompanion.studycompanion_backend.exception.user.Invali
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserUpdateException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserAlreadyExistsException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserNotFoundException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.UserOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.model.Role;
@@ -36,6 +37,7 @@ public class UserService {
      * @param userDto the user creation data containing email, name, username, and
      *                password
      * @return the created user with generated ID and timestamps
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws InvalidUserCreationException if any required field is empty
      * @throws UserAlreadyExistsException   if a user with the email already exists
      */
@@ -77,8 +79,7 @@ public class UserService {
 
         try {
             logger.debug("Creating user");
-            User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),
-                    userDto.password().trim());
+            User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),userDto.password().trim());
 
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
@@ -94,6 +95,7 @@ public class UserService {
      * 
      * @param id the UUID of the user to retrieve
      * @return the user with the specified ID
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given ID
      */
     @SuppressWarnings({"null", "unused"})
@@ -125,6 +127,7 @@ public class UserService {
      * 
      * @param email the email address of the user to retrieve
      * @return the user with the specified email
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given email
      */
     @SuppressWarnings("unused")
@@ -156,6 +159,7 @@ public class UserService {
      * 
      * @param username the username of the user to retrieve
      * @return the user with the specified username
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given username
      */
     @SuppressWarnings("unused")
@@ -206,6 +210,7 @@ public class UserService {
      * 
      * @param role the role to filter users by
      * @return a list of users with the specified role
+     * @throws InvalidUserParameterException if any nonnull arg is null
      */
     @SuppressWarnings("unused")
     public List<User> getAllUsersOfARole(@NonNull Role role) {
@@ -230,6 +235,7 @@ public class UserService {
      * 
      * @param userId the UUID of the user to verify
      * @return the updated user with verified status set to true
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given ID
      */
     @SuppressWarnings("unused")
@@ -280,6 +286,7 @@ public class UserService {
      * Called during authentication process to track user activity.
      * 
      * @param userId the UUID of the user whose last login to update
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given ID
      */
     @SuppressWarnings("unused")
@@ -312,6 +319,7 @@ public class UserService {
      * @param date the cutoff date - users with last login before this date are
      *             considered inactive
      * @return a list of users who haven't logged in since the specified date
+     * @throws InvalidUserParameterException if any nonnull arg is null
      */
     @SuppressWarnings("unused")
     public List<User> getInactiveUsersSince(@NonNull LocalDateTime date) {
@@ -338,6 +346,7 @@ public class UserService {
      * @param userId  the UUID of the user to update
      * @param userDto the update data containing new email, name, and/or username
      * @return the updated user
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException      if no user exists with the given ID
      * @throws InvalidUserUpdateException if no fields provided or email unchanged
      * @throws UserAlreadyExistsException if email is already in use by another user
@@ -396,7 +405,7 @@ public class UserService {
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user");
             return updatedUser;
-        } catch (UserAlreadyExistsException | UserNotFoundException | InvalidUserUpdateException | UserOperationException e) {
+        } catch (UserException e) {
             logger.error("User update failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
@@ -414,6 +423,7 @@ public class UserService {
      * @param userDto the password change data containing current, new, and
      *                confirmation passwords
      * @return the updated user
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException          if no user exists with the given ID
      * @throws InvalidPasswordChangeException if current password is wrong, new
      *                                        password same as current, or passwords
@@ -423,11 +433,11 @@ public class UserService {
     @SuppressWarnings("unused")
     public User updateUserPassword(@NonNull UUID userId, @NonNull UserDto.ChangePassword userDto) {
         if (userId == null) {
-            throw new InvalidUserParameterException("");
+            throw new InvalidUserParameterException("userId cannot be null");
         }
          
         if (userDto == null) {
-            throw new InvalidUserParameterException("");
+            throw new InvalidUserParameterException("User data transfer object cannot be null");
         }
 
         try {
@@ -449,7 +459,7 @@ public class UserService {
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user's password");
             return updatedUser;
-        } catch (UserNotFoundException | InvalidPasswordChangeException e) {
+        } catch (UserException e) {
             logger.error("User password change failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
@@ -464,9 +474,15 @@ public class UserService {
      * JPA cascade settings.
      * 
      * @param userId the UUID of the user to delete
+     * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException if no user exists with the given ID
      */
+    @SuppressWarnings("unused")
     public void deleteUser(@NonNull UUID userId) {
+        if (userId == null) {
+            throw new InvalidUserParameterException("userId cannot be null");
+        }
+
         try {
             logger.debug("Checking if user exists with provided id");
             getUserById(userId);
