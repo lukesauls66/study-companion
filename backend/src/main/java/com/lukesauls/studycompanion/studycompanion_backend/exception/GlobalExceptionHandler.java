@@ -20,8 +20,10 @@ import com.lukesauls.studycompanion.studycompanion_backend.exception.session.Cac
 import com.lukesauls.studycompanion.studycompanion_backend.exception.session.InvalidSessionParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.session.SessionOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.InvalidUploadCreationException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.InvalidUploadParameterException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UnauthorizedUploadAccessException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UploadNotFoundException;
+import com.lukesauls.studycompanion.studycompanion_backend.exception.upload.UploadOperationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidPasswordChangeException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserCreationException;
 import com.lukesauls.studycompanion.studycompanion_backend.exception.user.InvalidUserParameterException;
@@ -133,7 +135,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class, CardOperationException.class})
+    @ExceptionHandler(InvalidUploadParameterException.class)
+    public ResponseEntity<String> handleInvalidUploadParameter(InvalidUploadParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class, CardOperationException.class, UploadOperationException.class})
     public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
         return ResponseEntity.badRequest().body("Internal server error");
     }
