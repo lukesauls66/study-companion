@@ -1,10 +1,10 @@
-package com.lukesauls.studycompanion.studycompanion_backend;
+package com.study_companion.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class StudycompanionBackendApplicationTests {
+class BackendApplicationTests {
 
 	@Test
 	void contextLoads() {

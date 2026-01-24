@@ -1,4 +1,4 @@
-package com.lukesauls.studycompanion.studycompanion_backend.model;
+package com.study_companion.backend.model;
 
 public enum ParsingStatus {
     PENDING,
