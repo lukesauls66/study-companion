@@ -4,12 +4,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.study_companion.backend.exception.analytics.AnalyticsException;
+import com.study_companion.backend.exception.analytics.AnalyticsOperationException;
+import com.study_companion.backend.exception.analytics.InvalidAnalyticsParameterException;
+import com.study_companion.backend.exception.card.CardException;
 import com.study_companion.backend.exception.card.CardNotFoundException;
 import com.study_companion.backend.exception.card.CardOperationException;
 import com.study_companion.backend.exception.card.InvalidCardCreationException;
 import com.study_companion.backend.exception.card.InvalidCardParameterException;
 import com.study_companion.backend.exception.card.InvalidCardUpdateException;
 import com.study_companion.backend.exception.card.UnauthorizedCardAccessException;
+import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
 import com.study_companion.backend.exception.deck.InvalidDeckCreationException;
@@ -18,10 +23,12 @@ import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.exception.session.CacheOperationException;
 import com.study_companion.backend.exception.session.InvalidSessionParameterException;
+import com.study_companion.backend.exception.session.SessionException;
 import com.study_companion.backend.exception.session.SessionOperationException;
 import com.study_companion.backend.exception.upload.InvalidUploadCreationException;
 import com.study_companion.backend.exception.upload.InvalidUploadParameterException;
 import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
+import com.study_companion.backend.exception.upload.UploadException;
 import com.study_companion.backend.exception.upload.UploadNotFoundException;
 import com.study_companion.backend.exception.upload.UploadOperationException;
 import com.study_companion.backend.exception.user.InvalidPasswordChangeException;
@@ -29,12 +36,26 @@ import com.study_companion.backend.exception.user.InvalidUserCreationException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.InvalidUserUpdateException;
 import com.study_companion.backend.exception.user.UserAlreadyExistsException;
+import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.exception.user.UserOperationException;
 
-@ControllerAdvice
+@ControllerAdvice 
 public class GlobalExceptionHandler {
-
+    
+    // Main exception handler
+    @ExceptionHandler({ SessionOperationException.class, CacheOperationException.class, UserOperationException.class,
+            DeckOperationException.class, CardOperationException.class, UploadOperationException.class })
+            public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
+                return ResponseEntity.badRequest().body("Internal server error");
+            }
+            
+    // User exceptions
+    @ExceptionHandler(UserException.class)
+    public ResponseEntity<String> handleUserException(UserException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+            
     @ExceptionHandler(UserAlreadyExistsException.class)
     public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
@@ -60,6 +81,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
+    @ExceptionHandler(InvalidUserParameterException.class)
+    public ResponseEntity<String> handleInvalidUserParameter(InvalidUserParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+    
+    // Deck exceptions
+    @ExceptionHandler(DeckException.class)
+    public ResponseEntity<String> handleDeckException(DeckException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
     @ExceptionHandler(DeckNotFoundException.class)
     public ResponseEntity<String> handleDeckNotFound(DeckNotFoundException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
@@ -79,7 +111,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleInvalidDeckUpdate(InvalidDeckUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
-
+    
+    @ExceptionHandler(InvalidDeckParameterException.class)
+    public ResponseEntity<String> handleInvalidDeckParameter(InvalidDeckParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+    
+    // Card exceptions
+    @ExceptionHandler(CardException.class)
+    public ResponseEntity<String> handleCardException(CardException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+    
     @ExceptionHandler(InvalidCardUpdateException.class)
     public ResponseEntity<String> handleInvalidCardUpdate(InvalidCardUpdateException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
@@ -99,6 +142,17 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUnauthorizedCardAccess(UnauthorizedCardAccessException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+    
+    @ExceptionHandler(InvalidCardParameterException.class)
+    public ResponseEntity<String> handleInvalidCardParameter(InvalidCardParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+    
+    // Upload exceptions
+    @ExceptionHandler(UploadException.class)
+    public ResponseEntity<String> handleUploadException(UploadException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 
     @ExceptionHandler(UnauthorizedUploadAccessException.class)
     public ResponseEntity<String> handleUnauthorizedUploadAccess(UnauthorizedUploadAccessException e) {
@@ -114,34 +168,36 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUploadNotFound(UploadNotFoundException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
+    
+    @ExceptionHandler(InvalidUploadParameterException.class)
+    public ResponseEntity<String> handleInvalidUploadParameter(InvalidUploadParameterException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+    
+    // Session exceptions
+    @ExceptionHandler(SessionException.class)
+    public ResponseEntity<String> handleSessionException(SessionException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
 
     @ExceptionHandler(InvalidSessionParameterException.class)
     public ResponseEntity<String> handleInvalidSessionParameter(InvalidSessionParameterException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler(InvalidUserParameterException.class)
-    public ResponseEntity<String> handleInvalidUserParameter(InvalidUserParameterException e) {
+    // Analytics exceptions
+    @ExceptionHandler(AnalyticsException.class)
+    public ResponseEntity<String> handleAnalyticsException(AnalyticsException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler(InvalidDeckParameterException.class)
-    public ResponseEntity<String> handleInvalidDeckParameter(InvalidDeckParameterException e) {
+    @ExceptionHandler(InvalidAnalyticsParameterException.class)
+    public ResponseEntity<String> handleInvalidAnalyticsParameterException(InvalidAnalyticsParameterException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 
-    @ExceptionHandler(InvalidCardParameterException.class)
-    public ResponseEntity<String> handleInvalidCardParameter(InvalidCardParameterException e) {
+    @ExceptionHandler(AnalyticsOperationException.class)
+    public ResponseEntity<String> handleAnalyticsOperationException(AnalyticsOperationException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidUploadParameterException.class)
-    public ResponseEntity<String> handleInvalidUploadParameter(InvalidUploadParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler({SessionOperationException.class, CacheOperationException.class, UserOperationException.class, DeckOperationException.class, CardOperationException.class, UploadOperationException.class})
-    public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
-        return ResponseEntity.badRequest().body("Internal server error");
     }
 }
