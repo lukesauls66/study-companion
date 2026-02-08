@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.UploadDto;
@@ -16,6 +15,7 @@ import com.study_companion.backend.exception.upload.UploadOperationException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
+import com.study_companion.backend.exception.user.UserOperationException;
 import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
@@ -25,6 +25,8 @@ import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UploadRepository;
+import com.study_companion.backend.repository.postgres.UserRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,14 +35,18 @@ public class UploadService {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadService.class);
 
-    @Autowired
-    private UploadRepository uploadRepository;
+    
+    private final UploadRepository uploadRepository;
 
-    @Autowired
-    private UserService userService;
+    private final UserRepository userRepository;
+    
+    private final DeckService deckService;
 
-    @Autowired
-    private DeckService deckService;
+    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckService deckService) {
+        this.uploadRepository = uploadRepository;
+        this.userRepository = userRepository;
+        this.deckService = deckService; 
+    }
 
     /**
      * Creates a new upload record for the specified deck.
@@ -92,7 +98,8 @@ public class UploadService {
         }
 
         try {
-            User user = userService.getUserById(uploadDto.userId());
+            User user = userRepository.findById(uploadDto.userId()) 
+        .orElseThrow(() -> new UserNotFoundException("User not found")); 
             Deck deck = deckService.getDeckById(uploadDto.deckId());
 
             logger.debug("Verifying that the requesting user can upload files to this deck");
@@ -484,10 +491,11 @@ public class UploadService {
     public void deleteAllUserUploads(UUID userId) {
         if (userId == null) {
             throw new InvalidUploadParameterException("userId cannot be null");
-        }
+        } 
 
         try {
-            User user = userService.getUserById(userId);
+            User user = userRepository.findById(userId)
+        .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             logger.debug("Fetching all uploads belonging to the provided user");
             List<Upload> uploads = uploadRepository.findByUserId(userId);

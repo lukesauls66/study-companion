@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.user.InvalidPasswordChangeException;
@@ -25,8 +24,11 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     /**
      * Creates a new user if email doesn't already exist.
@@ -42,7 +44,7 @@ public class UserService {
      * @throws UserOperationException        if server error occurs
      */
     // FIXME: Add password encoding when adding auth
-    public User createUser(UserDto.Create userDto) {
+    public UserDto.Get createUser(UserDto.Create userDto) {
         if (userDto == null) {
             throw new InvalidUserParameterException("User data cannot be null when creating a user");
         }
@@ -83,7 +85,7 @@ public class UserService {
 
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
-            return savedUser;
+            return convertToDto(savedUser);
         } catch (Exception e) {
             logger.error("Failed to create user: {}", e.getMessage());
             throw new UserOperationException("Failed to create user", e);
@@ -99,8 +101,8 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given ID
      * @throws UserOperationException        if server error occurs
      */
-    public User getUserById(UUID id) {
-        if (id == null) { 
+    public UserDto.Get getUserById(UUID id) {
+        if (id == null) {
             throw new InvalidUserParameterException("ID cannot be null");
         }
 
@@ -112,7 +114,7 @@ public class UserService {
 
             User foundUser = userRepository.findById(id).get();
             logger.info("User found with provided id");
-            return foundUser;
+            return convertToDto(foundUser);
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;
@@ -131,7 +133,7 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given email
      * @throws UserOperationException        if server error occurs
      */
-    public User getUserByEmail(String email) {
+    public UserDto.Get getUserByEmail(String email) {
         if (email == null) {
             throw new InvalidUserParameterException("Email cannot be null");
         }
@@ -144,7 +146,7 @@ public class UserService {
 
             User foundUser = userRepository.findByEmail(email).get();
             logger.info("User found with provided email");
-            return foundUser;
+            return convertToDto(foundUser);
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided email: {}", e.getMessage());
             throw e;
@@ -164,7 +166,7 @@ public class UserService {
      *                                       username
      * @throws UserOperationException        if server error occurs
      */
-    public User getUserByUsername(String username) {
+    public UserDto.Get getUserByUsername(String username) {
         if (username == null) {
             throw new InvalidUserParameterException("Username cannot be null");
         }
@@ -177,7 +179,7 @@ public class UserService {
 
             User foundUser = userRepository.findByUsername(username).get();
             logger.info("User found with provided username");
-            return foundUser;
+            return convertToDto(foundUser);
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided username: {}", e.getMessage());
             throw e;
@@ -194,10 +196,10 @@ public class UserService {
      * @return a list of all users in the system
      * @throws UserOperationException if server error occurs
      */
-    public List<User> getAllUsers() {
+    public List<UserDto.Get> getAllUsers() {
         try {
             logger.debug("Searching for all users");
-            List<User> users = userRepository.findAll();
+            List<UserDto.Get> users = userRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Found all users");
             return users;
         } catch (Exception e) {
@@ -215,16 +217,16 @@ public class UserService {
      * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserOperationException        if server error occurs
      */
-    public List<User> getAllUsersOfARole(Role role) {
+    public List<UserDto.Get> getAllUsersOfARole(Role role) {
         if (role == null) {
             throw new InvalidUserParameterException("Roll cannot be null");
         }
 
-        try {
+        try { 
             logger.debug("Searching for users with role: {}", role);
-            List<User> users = userRepository.findByRole(role);
+            List<UserDto.Get> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList(); 
             logger.info("Found users with provided role");
-            return users;
+            return users; 
         } catch (Exception e) {
             logger.error("Failed to fetch users of provided role {}: {}", role, e.getMessage());
             throw new UserOperationException("Failed to fetch users of " + role + " role", e);
@@ -241,20 +243,21 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given ID
      * @throws UserOperationException        if server error occurs
      */
-    public User verifyUser(UUID userId) {
+    public UserDto.Get verifyUser(UUID userId) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
 
         try {
             logger.debug("Searching for user with provided id");
-            User existingUser = getUserById(userId);
+            User existingUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
             logger.debug("Found user, now verifying user");
             existingUser.setVerified(true);
 
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully verified user");
-            return updatedUser;
+            return convertToDto(updatedUser);
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;
@@ -272,12 +275,12 @@ public class UserService {
      * @return a list of users with the specified verification status
      * @throws UserOperationException if server error occurs
      */
-    public List<User> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
+    public List<UserDto.Get> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         try {
             logger.debug("Searching for users by verified status: {}", isVerified);
-            List<User> users = userRepository.findByIsVerified(isVerified);
+            List<UserDto.Get> users = userRepository.findByIsVerified(isVerified).stream().map(this::convertToDto).toList();
             logger.info("Found all users with verified status: {}", isVerified);
-            return users;
+            return users; 
         } catch (Exception e) {
             logger.error("Failed to fetch all users with provided verified status {}: {}", isVerified, e.getMessage());
             throw new UserOperationException("Failed to fetch all users with provided verified status", e);
@@ -300,7 +303,8 @@ public class UserService {
 
         try {
             logger.debug("Searching for user with provided id");
-            User existingUser = getUserById(userId);
+            User existingUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
             logger.debug("Found user, setting user's last login");
             existingUser.setLastLogin();
 
@@ -325,17 +329,17 @@ public class UserService {
      * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserOperationException        if server error occurs
      */
-    public List<User> getInactiveUsersSince(LocalDateTime date) {
+    public List<UserDto.Get> getInactiveUsersSince(LocalDateTime date) {
         if (date == null) {
             throw new InvalidUserParameterException("Date cannot be null");
         }
 
         try {
             logger.debug("Searching for users that have not logged in since {}", date);
-            List<User> users = userRepository.findByLastLoginBefore(date);
+            List<UserDto.Get> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all users that have not logged in since {}", date);
             return users;
-        } catch (Exception e) {
+        } catch (Exception e) { 
             logger.error("Failed to fetch users that have not logged in since {}: {}", date, e.getMessage());
             throw new UserOperationException("Failed to get users that have not logged in since " + date, e);
         }
@@ -357,7 +361,7 @@ public class UserService {
      *                                       user
      * @throws UserOperationException        if server error occurs
      */
-    public User updateUser(UUID userId, UserDto.Update userDto) {
+    public UserDto.Get updateUser(UUID userId, UserDto.Update userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -376,7 +380,8 @@ public class UserService {
 
         try {
             logger.debug("Searching for user by provided id");
-            User existingUser = getUserById(userId);
+            User existingUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
             logger.debug("Found user by provided id");
 
             if (userDto.email() != null) {
@@ -409,7 +414,7 @@ public class UserService {
 
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user");
-            return updatedUser;
+            return convertToDto(updatedUser);
         } catch (UserException e) {
             logger.error("User update failed: {}", e.getMessage());
             throw e;
@@ -436,7 +441,7 @@ public class UserService {
      * @throws UserOperationException         if server error occurs
      */
     // FIXME: Add password encoding when adding auth
-    public User updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
+    public UserDto.Get updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -447,7 +452,8 @@ public class UserService {
 
         try {
             logger.debug("Searching for user by provided id");
-            User existingUser = getUserById(userId);
+            User existingUser = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
             logger.debug("Found user with provided id");
 
             if (!userDto.currPassword().equals(existingUser.getPassword())) {
@@ -463,7 +469,7 @@ public class UserService {
 
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user's password");
-            return updatedUser;
+            return convertToDto(updatedUser);
         } catch (UserException e) {
             logger.error("User password change failed: {}", e.getMessage());
             throw e;
@@ -482,7 +488,7 @@ public class UserService {
      * @throws InvalidUserParameterException if any nonnull arg is null
      * @throws UserNotFoundException         if no user exists with the given ID
      * @throws UserOperationException        if server error occurs
-     */ 
+     */
     public void deleteUser(UUID userId) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
@@ -501,5 +507,16 @@ public class UserService {
             logger.error("Failed to delete user: {}", e.getMessage());
             throw new UserOperationException("Failed to delete user", e);
         }
+    }
+
+    private UserDto.Get convertToDto(User user) {
+        return new UserDto.Get(
+                user.getId(),
+                user.getEmail(),
+                user.getName(),
+                user.getUsername(),
+                user.getRole(),
+                user.getCreatedAt(),
+                user.getUpdatedAt());
     }
 }

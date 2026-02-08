@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.DeckDto;
@@ -21,6 +20,8 @@ import com.study_companion.backend.exception.user.UserOperationException;
 import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.DeckRepository;
+import com.study_companion.backend.repository.postgres.UserRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +30,14 @@ public class DeckService {
 
     private static final Logger logger = LoggerFactory.getLogger(DeckService.class);
 
-    @Autowired
-    private DeckRepository deckRepository;
+    private final DeckRepository deckRepository;
 
-    @Autowired
-    private UserService userService;
+    private final UserRepository userRepository;
+
+    DeckService(DeckRepository deckRepository, UserRepository userRepository) {
+        this.deckRepository = deckRepository;
+        this.userRepository = userRepository;
+    }
 
     /**
      * Creates a new deck for the specified user.
@@ -64,7 +68,8 @@ public class DeckService {
         }
 
         try {
-            User user = userService.getUserById(deckDto.userId());
+            User user = userRepository.findById(deckDto.userId())
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             Deck deck = new Deck(user, deckDto.title().trim(), deckDto.description().trim());
 
@@ -309,12 +314,13 @@ public class DeckService {
      */
     // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserDecks(UUID userId) {
-        if (userId == null) { 
+        if (userId == null) {
             throw new InvalidDeckParameterException("userId cannot be null");
         }
 
         try {
-            User user = userService.getUserById(userId);
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             logger.debug("Clearing user's decks");
             user.getDecks().clear();
