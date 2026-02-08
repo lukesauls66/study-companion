@@ -7,18 +7,34 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import com.study_companion.backend.exception.analytics.InvalidAnalyticsParameterException;
 import com.study_companion.backend.model.mongo.DeckAnalytics;
 import com.study_companion.backend.model.mongo.ReviewSession;
+import com.study_companion.backend.repository.mongo.DeckAnalyticsRepository;
+import com.study_companion.backend.repository.mongo.ReviewSessionRepository;
 
 @SpringBootTest
 public class DeckAnalyticsServiceIntegrationTest {
 
     @Autowired
     private DeckAnalyticsService deckAnalyticsService;
+    
+    @Autowired
+    private DeckAnalyticsRepository deckAnalyticsRepository;
+    
+    @Autowired
+    private ReviewSessionRepository reviewSessionRepository;
+    
+    @AfterEach
+    void cleanup() {
+        // Clean up test data after each test
+        reviewSessionRepository.deleteAll();
+        deckAnalyticsRepository.deleteAll();
+    }
 
     @Test
     void createReviewSession_ValidInput_ReturnsReviewSession() {
