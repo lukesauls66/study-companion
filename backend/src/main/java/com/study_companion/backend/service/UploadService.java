@@ -15,6 +15,7 @@ import com.study_companion.backend.exception.upload.UploadOperationException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
+import com.study_companion.backend.exception.user.UserOperationException;
 import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
@@ -24,6 +25,8 @@ import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UploadRepository;
+import com.study_companion.backend.repository.postgres.UserRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +38,13 @@ public class UploadService {
     
     private final UploadRepository uploadRepository;
 
-    
-    private final UserService userService;
-
+    private final UserRepository userRepository;
     
     private final DeckService deckService;
 
-    UploadService(UploadRepository uploadRepository, UserService userService, DeckService deckService) {
+    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckService deckService) {
         this.uploadRepository = uploadRepository;
-        this. userService = userService;
+        this.userRepository = userRepository;
         this.deckService = deckService; 
     }
 
@@ -97,7 +98,8 @@ public class UploadService {
         }
 
         try {
-            User user = userService.getUserById(uploadDto.userId());
+            User user = userRepository.findById(uploadDto.userId()) 
+        .orElseThrow(() -> new UserNotFoundException("User not found")); 
             Deck deck = deckService.getDeckById(uploadDto.deckId());
 
             logger.debug("Verifying that the requesting user can upload files to this deck");
@@ -489,10 +491,11 @@ public class UploadService {
     public void deleteAllUserUploads(UUID userId) {
         if (userId == null) {
             throw new InvalidUploadParameterException("userId cannot be null");
-        }
+        } 
 
         try {
-            User user = userService.getUserById(userId);
+            User user = userRepository.findById(userId)
+        .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             logger.debug("Fetching all uploads belonging to the provided user");
             List<Upload> uploads = uploadRepository.findByUserId(userId);

@@ -19,7 +19,6 @@ import com.study_companion.backend.exception.user.InvalidUserUpdateException;
 import com.study_companion.backend.exception.user.UserAlreadyExistsException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.model.Role;
-import com.study_companion.backend.model.postgres.User;
 
 @SpringBootTest
 @Transactional
@@ -28,19 +27,18 @@ public class UserServiceIntegrationTest {
 
     @Autowired
     private UserService userService;
-
+ 
     @Test
     void createUser_ValidInput_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
-        assertThat(user.getEmail()).isEqualTo("test@email.com");
-        assertThat(user.getName()).isEqualTo("John Smith");
-        assertThat(user.getUsername()).isEqualTo("john123");
-        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.email()).isEqualTo("test@email.com");
+        assertThat(user.name()).isEqualTo("John Smith");
+        assertThat(user.username()).isEqualTo("john123");
     }
-
+ 
     @Test
     void createUser_BlankEmail_ThrowsInvalidUserCreationException() {
         UserDto.Create createDto = new UserDto.Create(" ", "John Smith", "john123", "password");
@@ -103,13 +101,12 @@ public class UserServiceIntegrationTest {
     void getUserById_ValidInput_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User createdUser = userService.createUser(createDto);
-        User user = userService.getUserById(createdUser.getId());
-
-        assertThat(user.getEmail()).isEqualTo("test@email.com");
-        assertThat(user.getName()).isEqualTo("John Smith");
-        assertThat(user.getUsername()).isEqualTo("john123");
-        assertThat(user.getPassword()).isEqualTo("password");
+        UserDto.Get createdUser = userService.createUser(createDto);
+        UserDto.Get user = userService.getUserById(createdUser.id());
+ 
+        assertThat(user.email()).isEqualTo("test@email.com");
+        assertThat(user.name()).isEqualTo("John Smith");
+        assertThat(user.username()).isEqualTo("john123");
     }
 
     @Test
@@ -127,15 +124,14 @@ public class UserServiceIntegrationTest {
     void getUserByEmail_ValidInput_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User createdUser = userService.createUser(createDto);
-        User user = userService.getUserByEmail(createdUser.getEmail());
+        UserDto.Get createdUser = userService.createUser(createDto);
+        UserDto.Get user = userService.getUserByEmail(createdUser.email());
 
-        assertThat(user.getEmail()).isEqualTo("test@email.com");
-        assertThat(user.getName()).isEqualTo("John Smith");
-        assertThat(user.getUsername()).isEqualTo("john123");
-        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.email()).isEqualTo("test@email.com");
+        assertThat(user.name()).isEqualTo("John Smith");
+        assertThat(user.username()).isEqualTo("john123");
     }
-
+ 
     @Test
     void getUserByEmail_NonExistentId_ThrowsUserNotFoundException() {
         String emailString = "example@gmail.com";
@@ -151,13 +147,12 @@ public class UserServiceIntegrationTest {
     void getUserByUsername_ValidInput_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User createdUser = userService.createUser(createDto);
-        User user = userService.getUserByUsername(createdUser.getUsername());
+        UserDto.Get createdUser = userService.createUser(createDto);
+        UserDto.Get user = userService.getUserByUsername(createdUser.username());
 
-        assertThat(user.getEmail()).isEqualTo("test@email.com");
-        assertThat(user.getName()).isEqualTo("John Smith");
-        assertThat(user.getUsername()).isEqualTo("john123");
-        assertThat(user.getPassword()).isEqualTo("password");
+        assertThat(user.email()).isEqualTo("test@email.com");
+        assertThat(user.name()).isEqualTo("John Smith");
+        assertThat(user.username()).isEqualTo("john123");
     }
 
     @Test
@@ -179,17 +174,15 @@ public class UserServiceIntegrationTest {
         userService.createUser(createDto1);
         userService.createUser(createDto2);
 
-        List<User> users = userService.getAllUsers();
+        List<UserDto.Get> users = userService.getAllUsers();
 
-        assertThat(users).hasSize(2);
-        assertThat(users.get(0).getEmail()).isEqualTo("test@email.com");
-        assertThat(users.get(0).getName()).isEqualTo("John Smith");
-        assertThat(users.get(0).getUsername()).isEqualTo("john123");
-        assertThat(users.get(0).getPassword()).isEqualTo("password1");
-        assertThat(users.get(1).getEmail()).isEqualTo("test2@email.com");
-        assertThat(users.get(1).getName()).isEqualTo("Jane Smith");
-        assertThat(users.get(1).getUsername()).isEqualTo("jane123");
-        assertThat(users.get(1).getPassword()).isEqualTo("password2");
+        assertThat(users).hasSize(2); 
+        assertThat(users.get(0).email()).isEqualTo("test@email.com");
+        assertThat(users.get(0).name()).isEqualTo("John Smith");
+        assertThat(users.get(0).username()).isEqualTo("john123");
+        assertThat(users.get(1).email()).isEqualTo("test2@email.com"); 
+        assertThat(users.get(1).name()).isEqualTo("Jane Smith");
+        assertThat(users.get(1).username()).isEqualTo("jane123");
     }
 
     @Test
@@ -200,11 +193,11 @@ public class UserServiceIntegrationTest {
         userService.createUser(createDto1);
         userService.createUser(createDto2);
 
-        List<User> users = userService.getAllUsersOfARole(Role.USER);
-        List<User> admin = userService.getAllUsersOfARole(Role.ADMIN);
+        List<UserDto.Get> users = userService.getAllUsersOfARole(Role.USER);
+        List<UserDto.Get> admin = userService.getAllUsersOfARole(Role.ADMIN);
 
         assertThat(users).hasSize(2);
-        assertThat(admin).hasSize(0);
+        assertThat(admin).hasSize(0); 
     }
 
     @Test
@@ -213,15 +206,15 @@ public class UserServiceIntegrationTest {
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
         UserDto.Create createDto3 = new UserDto.Create("test3@email.com", "Jacob Smith", "jacob123", "password3");
 
-        User user1 = userService.createUser(createDto1);
+        UserDto.Get user1 = userService.createUser(createDto1);
         userService.createUser(createDto2);
-        User user3 = userService.createUser(createDto3);
+        UserDto.Get user3 = userService.createUser(createDto3);
 
-        userService.verifyUser(user1.getId());
-        userService.verifyUser(user3.getId());
+        userService.verifyUser(user1.id());
+        userService.verifyUser(user3.id());
 
-        List<User> verifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(true);
-        List<User> unverifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(false);
+        List<UserDto.Get> verifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(true);
+        List<UserDto.Get> unverifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(false);
 
         assertThat(verifiedUsers).hasSize(2);
         assertThat(unverifiedUsers).hasSize(1);
@@ -232,11 +225,11 @@ public class UserServiceIntegrationTest {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
-        User user1 = userService.createUser(createDto1);
-        User user2 = userService.createUser(createDto2);
+        UserDto.Get user1 = userService.createUser(createDto1);
+        UserDto.Get user2 = userService.createUser(createDto2);
 
-        userService.updateLastLogin(user1.getId());
-        userService.updateLastLogin(user2.getId());
+        userService.updateLastLogin(user1.id());
+        userService.updateLastLogin(user2.id());
 
         try {
             Thread.sleep(2000);
@@ -244,7 +237,7 @@ public class UserServiceIntegrationTest {
             Thread.currentThread().interrupt();
         }
 
-        List<User> users = userService.getInactiveUsersSince(LocalDateTime.now());
+        List<UserDto.Get> users = userService.getInactiveUsersSince(LocalDateTime.now());
 
         assertThat(users).hasSize(2);
     }
@@ -253,16 +246,16 @@ public class UserServiceIntegrationTest {
     void updateUserEmail_ValidInput_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.Update dto = new UserDto.Update("newtest@email.com", null, null);
 
-        userService.updateUser(user.getId(), dto);
-        User refreshedUser = userService.getUserById(user.getId());
+        userService.updateUser(user.id(), dto);
+        UserDto.Get refreshedUser = userService.getUserById(user.id());
 
-        assertThat(refreshedUser.getEmail()).isEqualTo("newtest@email.com");
-        assertThat(refreshedUser.getName()).isEqualTo("John Smith");
-        assertThat(refreshedUser.getUsername()).isEqualTo("john123");
+        assertThat(refreshedUser.email()).isEqualTo("newtest@email.com");
+        assertThat(refreshedUser.name()).isEqualTo("John Smith");
+        assertThat(refreshedUser.username()).isEqualTo("john123");
     }
 
     @Test
@@ -270,20 +263,20 @@ public class UserServiceIntegrationTest {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
-        User user = userService.createUser(createDto1);
+        UserDto.Get user = userService.createUser(createDto1);
         userService.createUser(createDto2);
 
         UserDto.Update dto1 = new UserDto.Update("test@email.com", null, null);
         UserDto.Update dto2 = new UserDto.Update("test2@email.com", null, null);
 
         InvalidUserUpdateException exception1 = assertThrows(InvalidUserUpdateException.class, () -> {
-            userService.updateUser(user.getId(), dto1);
+            userService.updateUser(user.id(), dto1);
         });
 
         assertThat(exception1.getMessage()).isEqualTo("Email is already set to this value");
 
         UserAlreadyExistsException exception2 = assertThrows(UserAlreadyExistsException.class, () -> {
-            userService.updateUser(user.getId(), dto2);
+            userService.updateUser(user.id(), dto2);
         });
 
         assertThat(exception2.getMessage()).isEqualTo("User with this email already exists");
@@ -293,57 +286,43 @@ public class UserServiceIntegrationTest {
     void updateUserNameAndUserName_ReturnsUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.Update dto = new UserDto.Update(null, "Jacob Smith", "jacob123");
 
-        userService.updateUser(user.getId(), dto);
-        User refreshedUser = userService.getUserById(user.getId());
+        userService.updateUser(user.id(), dto);
+        UserDto.Get refreshedUser = userService.getUserById(user.id());
 
-        assertThat(refreshedUser.getEmail()).isEqualTo("test@email.com");
-        assertThat(refreshedUser.getName()).isEqualTo("Jacob Smith");
-        assertThat(refreshedUser.getUsername()).isEqualTo("jacob123");
+        assertThat(refreshedUser.email()).isEqualTo("test@email.com");
+        assertThat(refreshedUser.name()).isEqualTo("Jacob Smith");
+        assertThat(refreshedUser.username()).isEqualTo("jacob123");
     }
 
     @Test
     void updateUser_InvalidInput_ThrowsInvalidUserUpdate() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.Update updateDto = new UserDto.Update(null, " ", " ");
 
         InvalidUserUpdateException exception = assertThrows(InvalidUserUpdateException.class, () -> {
-            userService.updateUser(user.getId(), updateDto);
+            userService.updateUser(user.id(), updateDto);
         });
 
         assertThat(exception.getMessage()).isEqualTo("At least one field must be provided");
     }
 
     @Test
-    void updateUserPassword_ValidInput_UpdatesPassword() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
-
-        User user = userService.createUser(createDto);
-
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
-
-        User updatedUser = userService.updateUserPassword(user.getId(), changeDto);
-
-        assertThat(updatedUser.getPassword()).isEqualTo("newpassword");
-        assertThat(updatedUser.getEmail()).isEqualTo("test@email.com");
-    }
-
-    @Test
     void updateUserPassword_WrongCurrentPassword_ThrowsInvalidPasswordChangeException() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.ChangePassword changeDto = new UserDto.ChangePassword("wrongpassword", "newpassword", "newpassword");
-
+ 
         InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.getId(), changeDto);
+            userService.updateUserPassword(user.id(), changeDto);
         });
 
         assertThat(exception.getMessage()).isEqualTo("Current password is incorrect");
@@ -353,14 +332,14 @@ public class UserServiceIntegrationTest {
     void updateUserPassword_SamePassword_ThrowsInvalidPasswordChangeException() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "password", "password");
 
         InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.getId(), changeDto);
-        });
-
+            userService.updateUserPassword(user.id(), changeDto);
+        }); 
+ 
         assertThat(exception.getMessage()).isEqualTo("Cannot change password to existing password");
     }
 
@@ -368,12 +347,12 @@ public class UserServiceIntegrationTest {
     void updateUserPassword_PasswordMismatch_ThrowsInvalidPasswordChangeException() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(createDto);
+        UserDto.Get user = userService.createUser(createDto);
 
         UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "differentpassword");
 
         InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.getId(), changeDto);
+            userService.updateUserPassword(user.id(), changeDto);
         });
 
         assertThat(exception.getMessage()).isEqualTo("New password doesn't match confirm password");
@@ -396,14 +375,15 @@ public class UserServiceIntegrationTest {
     void deleteUser() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(createDto);
-        List<User> users = userService.getAllUsers();
+        UserDto.Get user = userService.createUser(createDto);
+        List<UserDto.Get> users = userService.getAllUsers();
 
-        assertThat(users).hasSize(1);
+        assertThat(users).hasSize(1); 
 
-        userService.deleteUser(user.getId());
+        userService.deleteUser(user.id());
         users = userService.getAllUsers();
  
         assertThat(users).hasSize(0);
     }
 }
+  

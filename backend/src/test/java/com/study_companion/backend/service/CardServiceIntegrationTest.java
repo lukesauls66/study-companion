@@ -23,13 +23,12 @@ import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessExceptio
 import com.study_companion.backend.model.CardCreationType;
 import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
-import com.study_companion.backend.model.postgres.User;
 
 @SpringBootTest
 @Transactional
 @Rollback
 public class CardServiceIntegrationTest {
-    
+
     @Autowired
     private CardService cardService;
 
@@ -43,35 +42,37 @@ public class CardServiceIntegrationTest {
     void createCard_ValidInput_ReturnsCard() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", "testurl.jpg");
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2",
+                "testurl.jpg");
 
-        Card card1 = cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.getId());
-        Card card2 = cardService.createCard(cardCreateDto2, CardCreationType.AI_PARSED, user.getId());
+        Card card1 = cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        Card card2 = cardService.createCard(cardCreateDto2, CardCreationType.AI_PARSED, user.id());
 
         List<Card> cards = deck.getCards();
-        assertThat(card1.getDeck().getUser().getId()).isEqualTo(user.getId());
-        assertThat(card2.getDeck().getUser().getId()).isEqualTo(user.getId());
+        assertThat(card1.getDeck().getUser().getId()).isEqualTo(user.id());
+        assertThat(card2.getDeck().getUser().getId()).isEqualTo(user.id());
         assertThat(cards).hasSize(2);
         assertThat(cards).extracting(Card::getQuestion).containsExactlyInAnyOrder("Test question?", "Test question 2?");
         assertThat(cards).extracting(Card::getAnswer).containsExactlyInAnyOrder("Test answer", "Test answer 2");
         assertThat(cards).extracting(Card::getImageUrl).containsExactlyInAnyOrder(null, "testurl.jpg");
-        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.AI_PARSED, CardCreationType.MANUAL_UPLOAD);
+        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.AI_PARSED,
+                CardCreationType.MANUAL_UPLOAD);
     }
 
     @Test
     void createCard_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
@@ -90,16 +91,16 @@ public class CardServiceIntegrationTest {
     void createCard_BlankQuestion_ThrowsInvalidCardCreationException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), " ", "Test answer", null);
 
         InvalidCardCreationException exception = assertThrows(InvalidCardCreationException.class, () -> {
-            cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+            cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("Question cannot be empty");
@@ -109,16 +110,16 @@ public class CardServiceIntegrationTest {
     void createCard_BlankAnswer_ThrowsInvalidCardCreationException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", " ", null);
 
         InvalidCardCreationException exception = assertThrows(InvalidCardCreationException.class, () -> {
-            cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+            cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("Answer cannot be empty");
@@ -128,15 +129,15 @@ public class CardServiceIntegrationTest {
     void getCardById_ValidInput_ReturnsCard() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card createdCard = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card createdCard = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
         Card card = cardService.getCardById(createdCard.getId());
 
         assertThat(card.getQuestion()).isEqualTo("Test question?");
@@ -161,76 +162,85 @@ public class CardServiceIntegrationTest {
         UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
-        User user1 = userService.createUser(userCreateDto1);
-        User user2 = userService.createUser(userCreateDto2);
+        UserDto.Get user1 = userService.createUser(userCreateDto1);
+        UserDto.Get user2 = userService.createUser(userCreateDto2);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.getId(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.getId(), "Test Deck 2", "Testing 2");
+        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
 
         Deck deck1 = deckService.createDeck(deckCreateDto1);
         Deck deck2 = deckService.createDeck(deckCreateDto2);
 
         CardDto.Create cardCreateDto1 = new CardDto.Create(deck1.getId(), "Test question?", "Test answer", null);
         CardDto.Create cardCreateDto2 = new CardDto.Create(deck1.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck2.getId(), "Test question 3?", "Test answer 3", "testurl.jpg");
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck2.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
 
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user1.getId());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user1.getId());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user2.getId());
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user1.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user1.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user2.id());
 
         List<Card> cards = cardService.getAllCards();
 
         assertThat(cards).hasSize(3);
-        assertThat(cards).extracting(Card::getQuestion).containsExactlyInAnyOrder("Test question?", "Test question 2?", "Test question 3?");
-        assertThat(cards).extracting(Card::getAnswer).containsExactlyInAnyOrder("Test answer", "Test answer 2", "Test answer 3");
+        assertThat(cards).extracting(Card::getQuestion).containsExactlyInAnyOrder("Test question?", "Test question 2?",
+                "Test question 3?");
+        assertThat(cards).extracting(Card::getAnswer).containsExactlyInAnyOrder("Test answer", "Test answer 2",
+                "Test answer 3");
         assertThat(cards).extracting(Card::getImageUrl).containsExactlyInAnyOrder("testurl.jpg", null, null);
-        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
+        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.MANUAL_UPLOAD,
+                CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
     @Test
     void GetAllDeckCards_ValidInput_ReturnsCards() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
         CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3", "testurl.jpg");
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
 
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.getId());
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
 
         List<Card> cards = cardService.getAllDeckCards(deck.getId());
 
         assertThat(cards).hasSize(3);
-        assertThat(cards).extracting(Card::getQuestion).containsExactlyInAnyOrder("Test question?", "Test question 2?", "Test question 3?");
-        assertThat(cards).extracting(Card::getAnswer).containsExactlyInAnyOrder("Test answer", "Test answer 2", "Test answer 3");
+        assertThat(cards).extracting(Card::getQuestion).containsExactlyInAnyOrder("Test question?", "Test question 2?",
+                "Test question 3?");
+        assertThat(cards).extracting(Card::getAnswer).containsExactlyInAnyOrder("Test answer", "Test answer 2",
+                "Test answer 3");
         assertThat(cards).extracting(Card::getImageUrl).containsExactlyInAnyOrder("testurl.jpg", null, null);
-        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
+        assertThat(cards).extracting(Card::getCreationType).containsExactlyInAnyOrder(CardCreationType.MANUAL_UPLOAD,
+                CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
     @Test
     void getCountOfAllDeckCards_ValidInput_ReturnsCardCount() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
- 
-        User user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
         CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3", "testurl.jpg");
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
 
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.getId());
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
 
         long cardCount = cardService.getCountOfAllDeckCards(deck.getId());
 
@@ -241,22 +251,22 @@ public class CardServiceIntegrationTest {
     void updateCard_ValidInput_ReturnsUpdatedCard() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
 
         CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
 
-        Card updatedCard = cardService.updateCard(card.getId(), cardUpdateDto, user.getId());
+        Card updatedCard = cardService.updateCard(card.getId(), cardUpdateDto, user.id());
 
         assertThat(updatedCard.getId()).isEqualTo(card.getId());
-        assertThat(updatedCard.getDeck().getUser().getId()).isEqualTo(user.getId());
+        assertThat(updatedCard.getDeck().getUser().getId()).isEqualTo(user.id());
         assertThat(updatedCard.getQuestion()).isEqualTo("Updated question?");
         assertThat(updatedCard.getAnswer()).isEqualTo("Updated answer");
         assertThat(updatedCard.getImageUrl()).isEqualTo("updated-image.jpg");
@@ -267,20 +277,20 @@ public class CardServiceIntegrationTest {
     void updateCard_InvalidInput_ThrowsInvalidCardUpdateException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
 
         CardDto.Update cardUpdateDto = new CardDto.Update("", "", "");
 
         InvalidCardUpdateException exception = assertThrows(InvalidCardUpdateException.class, () -> {
-            cardService.updateCard(card.getId(), cardUpdateDto, user.getId());
+            cardService.updateCard(card.getId(), cardUpdateDto, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("At least one field must be provided");
@@ -290,15 +300,15 @@ public class CardServiceIntegrationTest {
     void updateCard_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
 
         CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
 
@@ -315,20 +325,20 @@ public class CardServiceIntegrationTest {
     void deleteCardById_ValidInput() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
 
         Deck refreshedDeck1 = deckService.getDeckById(deck.getId());
         assertThat(refreshedDeck1.getCards()).hasSize(1);
 
-        cardService.deleteCardById(card.getId(), user.getId());
+        cardService.deleteCardById(card.getId(), user.id());
 
         Deck refreshedDeck2 = deckService.getDeckById(deck.getId());
         assertThat(refreshedDeck2.getCards()).hasSize(0);
@@ -338,15 +348,15 @@ public class CardServiceIntegrationTest {
     void deleteCardById_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
 
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.getId());
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
 
         UUID unauthorizedUUID = UUID.randomUUID();
 
@@ -361,19 +371,20 @@ public class CardServiceIntegrationTest {
     void deleteAllDeckCards_ValidInput() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
-        User user = userService.createUser(userCreateDto);
+        UserDto.Get user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.getId(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
 
         CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
         CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3", "testurl.jpg");
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
 
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.getId());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.getId());
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
 
         Deck refreshedDeck1 = deckService.getDeckById(deck.getId());
         assertThat(refreshedDeck1.getCards()).hasSize(3);
