@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.user.InvalidPasswordChangeException;
@@ -25,8 +24,11 @@ public class UserService {
 
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+
+    UserService(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
 
     /**
      * Creates a new user if email doesn't already exist.

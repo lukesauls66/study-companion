@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.CardDto;
@@ -30,11 +29,14 @@ public class CardService {
 
     private static final Logger logger = LoggerFactory.getLogger(CardService.class);
 
-    @Autowired
-    private CardRepository cardRepository;
+    private final CardRepository cardRepository;
 
-    @Autowired
-    private DeckService deckService;
+    private final DeckService deckService;
+
+    CardService(CardRepository cardRepository, DeckService deckService) {
+        this.cardRepository = cardRepository;
+        this.deckService = deckService; 
+    }
 
     /**
      * Create a new card for the specified deck.

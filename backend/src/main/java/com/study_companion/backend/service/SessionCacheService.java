@@ -8,7 +8,6 @@ import com.study_companion.backend.repository.redis.CachedDecksRepository;
 import com.study_companion.backend.exception.session.SessionOperationException;
 import com.study_companion.backend.exception.session.CacheOperationException;
 import com.study_companion.backend.exception.session.InvalidSessionParameterException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +21,14 @@ public class SessionCacheService {
     
     private static final Logger logger = LoggerFactory.getLogger(SessionCacheService.class);
     
-    @Autowired
-    private SessionRepository sessionRepository;
+    private final SessionRepository sessionRepository;
     
-    @Autowired
-    private CachedDecksRepository cachedDecksRepository;
+    private final CachedDecksRepository cachedDecksRepository;
+
+    SessionCacheService(SessionRepository sessionRepository, CachedDecksRepository cachedDecksRepository) {
+        this.sessionRepository = sessionRepository;
+        this.cachedDecksRepository = cachedDecksRepository;
+    }
     
     /**
      * Creates a new session for a user.

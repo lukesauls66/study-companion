@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,11 +21,14 @@ public class DeckAnalyticsService {
 
     private static final Logger logger = LoggerFactory.getLogger(DeckAnalyticsService.class);
 
-    @Autowired
-    private DeckAnalyticsRepository deckAnalyticsRepository;
+    private final DeckAnalyticsRepository deckAnalyticsRepository;
 
-    @Autowired
-    private ReviewSessionRepository reviewSessionRepository;
+    private final ReviewSessionRepository reviewSessionRepository;
+
+    DeckAnalyticsService(DeckAnalyticsRepository deckAnalyticsRepository, ReviewSessionRepository reviewSessionRepository) {
+        this.deckAnalyticsRepository = deckAnalyticsRepository;
+        this.reviewSessionRepository = reviewSessionRepository;
+    }
 
     /**
      * Creates a new review session and automatically updates the corresponding deck

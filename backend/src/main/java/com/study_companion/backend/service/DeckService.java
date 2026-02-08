@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.DeckDto;
@@ -29,11 +28,14 @@ public class DeckService {
 
     private static final Logger logger = LoggerFactory.getLogger(DeckService.class);
 
-    @Autowired
-    private DeckRepository deckRepository;
+    private final DeckRepository deckRepository;
 
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+
+    DeckService(DeckRepository deckRepository, UserService userService) {
+        this.deckRepository = deckRepository;
+        this.userService = userService;
+    }
 
     /**
      * Creates a new deck for the specified user.

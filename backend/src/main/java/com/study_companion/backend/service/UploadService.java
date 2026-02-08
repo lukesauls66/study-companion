@@ -3,7 +3,6 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.UploadDto;
@@ -33,14 +32,20 @@ public class UploadService {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadService.class);
 
-    @Autowired
-    private UploadRepository uploadRepository;
+    
+    private final UploadRepository uploadRepository;
 
-    @Autowired
-    private UserService userService;
+    
+    private final UserService userService;
 
-    @Autowired
-    private DeckService deckService;
+    
+    private final DeckService deckService;
+
+    UploadService(UploadRepository uploadRepository, UserService userService, DeckService deckService) {
+        this.uploadRepository = uploadRepository;
+        this. userService = userService;
+        this.deckService = deckService; 
+    }
 
     /**
      * Creates a new upload record for the specified deck.
