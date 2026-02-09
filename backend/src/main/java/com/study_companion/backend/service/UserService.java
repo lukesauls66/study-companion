@@ -18,6 +18,7 @@ import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UserService {
@@ -25,9 +26,11 @@ public class UserService {
     private static final Logger logger = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    UserService(UserRepository userRepository) {
+    UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -42,8 +45,7 @@ public class UserService {
      * @throws InvalidUserCreationException  if any required field is empty
      * @throws UserAlreadyExistsException    if a user with the email already exists
      * @throws UserOperationException        if server error occurs
-     */
-    // FIXME: Add password encoding when adding auth
+     */  
     public UserDto.Get createUser(UserDto.Create userDto) {
         if (userDto == null) {
             throw new InvalidUserParameterException("User data cannot be null when creating a user");
@@ -81,7 +83,7 @@ public class UserService {
         try {
             logger.debug("Creating user");
             User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),
-                    userDto.password().trim());
+                    passwordEncoder.encode(userDto.password().trim()));
 
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
@@ -440,7 +442,6 @@ public class UserService {
      *                                        don't match
      * @throws UserOperationException         if server error occurs
      */
-    // FIXME: Add password encoding when adding auth
     public UserDto.Get updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
@@ -456,16 +457,16 @@ public class UserService {
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
             logger.debug("Found user with provided id");
 
-            if (!userDto.currPassword().equals(existingUser.getPassword())) {
+            if (!passwordEncoder.matches(userDto.currPassword(), existingUser.getPassword())) {
                 throw new InvalidPasswordChangeException("Current password is incorrect");
-            } else if (userDto.newPassword().equals(userDto.currPassword())) {
+            } else if (passwordEncoder.matches(userDto.newPassword(), existingUser.getPassword())) {
                 throw new InvalidPasswordChangeException("Cannot change password to existing password");
             } else if (!userDto.newPassword().equals(userDto.confirmNewPassword())) {
                 throw new InvalidPasswordChangeException("New password doesn't match confirm password");
             }
 
             logger.debug("Updated user's password");
-            existingUser.setPassword(userDto.newPassword().trim());
+            existingUser.setPassword(passwordEncoder.encode(userDto.newPassword().trim()));
 
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user's password");
