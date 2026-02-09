@@ -3,6 +3,8 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.CardDto;
@@ -12,17 +14,19 @@ import com.study_companion.backend.exception.card.CardOperationException;
 import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
+import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.card.InvalidCardCreationException;
 import com.study_companion.backend.exception.card.InvalidCardParameterException;
 import com.study_companion.backend.exception.card.InvalidCardUpdateException;
 import com.study_companion.backend.exception.card.UnauthorizedCardAccessException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
+import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
 import com.study_companion.backend.model.CardCreationType;
 import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.repository.postgres.CardRepository;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory; 
+import org.slf4j.LoggerFactory;
 
 @Service
 public class CardService {
@@ -35,7 +39,7 @@ public class CardService {
 
     CardService(CardRepository cardRepository, DeckService deckService) {
         this.cardRepository = cardRepository;
-        this.deckService = deckService; 
+        this.deckService = deckService;
     }
 
     /**
@@ -153,13 +157,29 @@ public class CardService {
      * @return a list of all cards in the system
      * @throws CardOperationException if server error occurs
      */
-    // FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Card> getAllCards() {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedCardAccessException("Unauthorized user access");
+            }
+
             logger.debug("Searching for all cards");
             List<Card> cards = cardRepository.findAll();
             logger.info("Successfully fetched all cards");
             return cards;
+        } catch (CardException e) {
+            logger.error("Card operation failed: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all cards: {}", e.getMessage());
             throw new CardOperationException("Failed to fetch all cards", e);
@@ -346,13 +366,26 @@ public class CardService {
      * @throws DeckOperationException        if deck operations fail
      * @throws CardOperationException        if server error occurs
      */
-    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllDeckCards(UUID deckId) {
         if (deckId == null) {
             throw new InvalidCardParameterException("deckId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedCardAccessException("Unauthorized user access");
+            }
+
             Deck deck = deckService.getDeckById(deckId);
 
             logger.debug("Clearing deck's cards");
@@ -363,6 +396,9 @@ public class CardService {
             logger.info("Successfully deleted all cards from provided deck");
         } catch (DeckException e) {
             logger.error("Card deletions failed due to deck issue: {}", e.getMessage());
+            throw e;
+        } catch (CardException e) {
+            logger.error("Card operation failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to delete all cards from the provided deck: {}", e.getMessage());

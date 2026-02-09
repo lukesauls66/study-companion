@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -110,6 +111,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllDecks_ReturnsDecks() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
@@ -273,6 +275,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllUserDecks() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 

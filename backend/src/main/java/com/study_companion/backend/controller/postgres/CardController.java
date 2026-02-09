@@ -52,7 +52,6 @@ public class CardController {
         return cardService.getCountOfAllDeckCards(deckId);
     }
 
-    // FIXME: Create Auth logic and test
     @PostMapping("/createCard")
     public ResponseEntity<String> createNewCard(@RequestBody CardDto.Create cardDto,
             @RequestParam CardCreationType cardCreationType, Authentication authentication) {
@@ -61,7 +60,6 @@ public class CardController {
         return ResponseEntity.ok("Successfully created new card");
     }
 
-    //FIXME: Create Auth logic and test
     @PutMapping("/update/{cardId}")
     public ResponseEntity<String> updateCard(@PathVariable UUID cardId, @RequestBody CardDto.Update cardDto,
             Authentication authentication) {
@@ -70,8 +68,7 @@ public class CardController {
         return ResponseEntity.ok("Successfully updated card");
     }
 
-    //FIXME: Create Auth logic and test
-    @DeleteMapping("/delete/{cardId")
+    @DeleteMapping("/delete/{cardId}")
     public ResponseEntity<String> deleteCard(@PathVariable UUID cardId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
         cardService.deleteCardById(cardId, requestingUserId);

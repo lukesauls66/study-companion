@@ -3,6 +3,8 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.UploadDto;
@@ -35,17 +37,16 @@ public class UploadService {
 
     private static final Logger logger = LoggerFactory.getLogger(UploadService.class);
 
-    
     private final UploadRepository uploadRepository;
 
     private final UserRepository userRepository;
-    
+
     private final DeckService deckService;
 
     UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckService deckService) {
         this.uploadRepository = uploadRepository;
         this.userRepository = userRepository;
-        this.deckService = deckService; 
+        this.deckService = deckService;
     }
 
     /**
@@ -54,10 +55,11 @@ public class UploadService {
      * Validates that fileName is not empty and establishes bidirectional
      * relationships.
      * 
-     * @param uploadDto the upload creation data containing userId, deckId,
-     *                  fileName, and fileType
-     * @param fileUrl   the URL where the uploaded file is stored
-     * @param fileSize  the size of the uploaded file in bytes
+     * @param uploadDto        the upload creation data containing userId, deckId,
+     *                         fileName, and fileType
+     * @param fileUrl          the URL where the uploaded file is stored
+     * @param fileSize         the size of the uploaded file in bytes
+     * @param requestingUserId the id belonging to the user making the request
      * @return the created upload with generated ID and timestamps
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws InvalidUserParameterException   if the userId is invalid
@@ -71,15 +73,18 @@ public class UploadService {
      * @throws UserOperationException          if user operations fail
      * @throws UploadOperationException        if server error occurs
      */
-    //FIXME: create auth flow ASAP
     public Upload createUpload(UploadDto.Create uploadDto,
-            Long fileSize) {
+            Long fileSize, UUID requestingUserId) {
         if (uploadDto == null) {
             throw new InvalidUploadParameterException("Upload data transfer object cannot be null");
         }
 
         if (fileSize == null) {
             throw new InvalidUploadParameterException("File size cannot be null");
+        }
+
+        if (requestingUserId == null) {
+            throw new InvalidUploadParameterException("Requesting userId cannot be null");
         }
 
         if (uploadDto.fileName().trim().isEmpty()) {
@@ -95,8 +100,13 @@ public class UploadService {
         }
 
         try {
-            User user = userRepository.findById(uploadDto.userId()) 
-        .orElseThrow(() -> new UserNotFoundException("User not found")); 
+            logger.debug("Checking if requestingUserId matches the userId from the uploadDto");
+            if (!requestingUserId.equals(uploadDto.userId())) {
+                throw new UnauthorizedUploadAccessException("Unauthorized user upload");
+            }
+
+            User user = userRepository.findById(uploadDto.userId())
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
             Deck deck = deckService.getDeckById(uploadDto.deckId());
 
             logger.debug("Verifying that the requesting user can upload files to this deck");
@@ -105,7 +115,8 @@ public class UploadService {
             }
 
             logger.debug("Creating user");
-            Upload upload = new Upload(user, deck, uploadDto.fileName().trim(), uploadDto.fileUrl().trim(), uploadDto.fileType(),
+            Upload upload = new Upload(user, deck, uploadDto.fileName().trim(), uploadDto.fileUrl().trim(),
+                    uploadDto.fileType(),
                     fileSize);
 
             logger.debug("Saving new upload to database");
@@ -121,6 +132,9 @@ public class UploadService {
             return newUpload;
         } catch (UserException | DeckException e) {
             logger.error("Upload creation failed: {}", e.getMessage());
+            throw e;
+        } catch (UploadException e) {
+            logger.error("Upload operation failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to create upload: {}", e.getMessage());
@@ -138,7 +152,7 @@ public class UploadService {
      * @throws UploadOperationException        if server error occurs
      */
     public Upload getUploadById(UUID id) {
-        if (id == null) { 
+        if (id == null) {
             throw new InvalidUploadParameterException("id cannot be null");
         }
 
@@ -166,15 +180,32 @@ public class UploadService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all uploads in the system
-     * @throws UploadOperationException if server error occurs
+     * @throws UnauthorizedUploadAccessException if requesting user is not an admin
+     * @throws UploadOperationException          if server error occurs
      */
-    // FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Upload> getAllUploads() {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUploadAccessException("Unauthorized user access");
+            }
+
             logger.debug("Fetching all uploads");
             List<Upload> uploads = uploadRepository.findAll();
             logger.info("Successfully fetched all uploads");
             return uploads;
+        } catch (UploadException e) {
+            logger.error("Upload operation failed: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all uploads: {}", e.getMessage());
             throw new UploadOperationException("Failed to fetch all uploads", e);
@@ -477,22 +508,38 @@ public class UploadService {
      * This is typically used for administrative purposes or account deletion.
      * Maintains bidirectional relationships by removing uploads from both user's
      * and decks' collections.
-     * Currently unrestricted - should be limited to admin users in production.
+     * Only admin users can perform this operation.
      * 
      * @param userId the UUID of the user whose uploads to delete
-     * @throws InvalidUploadParameterException if any nonnull arg is null
-     * @throws UserNotFoundException           if the specified user does not exist
-     * @throws UploadOperationException        if server error occurs
+     * @throws InvalidUploadParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUploadAccessException if requesting user is not an admin
+     *                                           or not authenticated
+     * @throws UserNotFoundException             if the specified user does not
+     *                                           exist
+     * @throws UploadOperationException          if server error occurs
      */
-    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserUploads(UUID userId) {
         if (userId == null) {
             throw new InvalidUploadParameterException("userId cannot be null");
-        } 
+        }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUploadAccessException("Admin access required");
+            }
+
             User user = userRepository.findById(userId)
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
+                    .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             logger.debug("Fetching all uploads belonging to the provided user");
             List<Upload> uploads = uploadRepository.findByUserId(userId);
@@ -512,6 +559,9 @@ public class UploadService {
         } catch (UserException e) {
             logger.error("User's upload deletions failed due to user issue: {}", e.getMessage());
             throw e;
+        } catch (UploadException e) {
+            logger.error("Upload operation failed: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to delete all uploads belonging to provided user: {}", e.getMessage());
             throw new UploadOperationException("Failed to delete all uploads belonging to provided user", e);
@@ -523,20 +573,36 @@ public class UploadService {
      * This is typically used when a deck is deleted or for cleanup purposes.
      * Maintains bidirectional relationships by removing uploads from both deck's
      * and users' collections.
-     * Currently unrestricted - should be limited to admin users in production.
+     * Only admin users can perform this operation.
      * 
      * @param deckId the UUID of the deck whose uploads to delete
-     * @throws InvalidUploadParameterException if any nonnull arg is null
-     * @throws DeckNotFoundException           if the specified deck does not exist
-     * @throws UploadOperationException        if server error occurs
+     * @throws InvalidUploadParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUploadAccessException if requesting user is not an admin
+     *                                           or not authenticated
+     * @throws DeckNotFoundException             if the specified deck does not
+     *                                           exist
+     * @throws UploadOperationException          if server error occurs
      */
-    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllDeckUploads(UUID deckId) {
         if (deckId == null) {
             throw new InvalidUploadParameterException("deckId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUploadAccessException("Admin access required");
+            }
+
             Deck deck = deckService.getDeckById(deckId);
 
             logger.debug("Fetching all uploads belonging to the provided deck");
@@ -556,6 +622,9 @@ public class UploadService {
             logger.info("Successfully removed uploads from their parent deck and user");
         } catch (DeckException e) {
             logger.error("Deck's upload deletions failed due to deck issue: {}", e.getMessage());
+            throw e;
+        } catch (UploadException e) {
+            logger.error("Upload operation failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to delete all uploads belonging to provided deck: {}", e.getMessage());

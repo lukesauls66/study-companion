@@ -56,7 +56,6 @@ public class DeckController {
         return ResponseEntity.ok("Successfully created new deck");
     }
 
-    //FIXME: Create Auth logic and test
     @PutMapping("/update/{deckId}")
     public ResponseEntity<String> updateDeck(@PathVariable UUID deckId, @RequestBody DeckDto.Update deckDto,
             Authentication authentication) {
@@ -65,7 +64,6 @@ public class DeckController {
         return ResponseEntity.ok("Successfully updated deck");
     }
 
-    //FIXME: Create Auth logic and test
     @DeleteMapping("/delete/{deckId}")
     public ResponseEntity<String> deleteDeck(@PathVariable UUID deckId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());

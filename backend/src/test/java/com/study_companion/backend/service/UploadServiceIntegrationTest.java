@@ -2,6 +2,7 @@ package com.study_companion.backend.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.upload.InvalidUploadCreationException;
 import com.study_companion.backend.exception.upload.InvalidUploadParameterException;
 import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
+import com.study_companion.backend.exception.upload.UploadException;
 import com.study_companion.backend.exception.upload.UploadNotFoundException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.model.FileType;
@@ -55,7 +57,7 @@ public class UploadServiceIntegrationTest {
                 FileType.PNG, "https://example.com/files/test-file.png"); 
         Long fileSize = 1024L; 
 
-        Upload upload = uploadService.createUpload(uploadCreateDto, fileSize);
+        Upload upload = uploadService.createUpload(uploadCreateDto, fileSize, user.id());
 
         // Verify upload properties
         assertThat(upload).isNotNull(); 
@@ -92,7 +94,7 @@ public class UploadServiceIntegrationTest {
         Long fileSize = 1024L;
 
         InvalidUploadCreationException exception = assertThrows(InvalidUploadCreationException.class, () -> {
-            uploadService.createUpload(uploadCreateDto, fileSize);
+            uploadService.createUpload(uploadCreateDto, fileSize, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("File name cannot be empty");
@@ -100,11 +102,33 @@ public class UploadServiceIntegrationTest {
 
     @Test
     void createUpload_NullUploadDto_ThrowsInvalidUploadParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.Get user = userService.createUser(userCreateDto);
+        Long fileSize = 1024L;
+
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
-            uploadService.createUpload(null, 1024L);
+            uploadService.createUpload(null, fileSize, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("Upload data transfer object cannot be null");
+    }
+
+    @Test
+    void createUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "", FileType.PNG, "https://example.com/files/test-file.PDF");
+        Long fileSize = 1024L;
+
+        InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
+            uploadService.createUpload(uploadCreateDto, fileSize, null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -114,7 +138,7 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto = new UploadDto.Create(userId, deckId, "test-file.PDF", FileType.PNG, "https://example.com/file.PDF");
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
-            uploadService.createUpload(uploadCreateDto, null);
+            uploadService.createUpload(uploadCreateDto, null, userId);
         });
 
         assertThat(exception.getMessage()).isEqualTo("File size cannot be null");
@@ -132,11 +156,11 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto = new UploadDto.Create(nonExistentUserId, deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF"); 
 
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
-            uploadService.createUpload(uploadCreateDto, 1024L);
-        });
+        UploadException exception = assertThrows(UploadException.class, () -> {
+            uploadService.createUpload(uploadCreateDto, 1024L, user.id());
+        });  
 
-        assertThat(exception.getMessage()).contains("User not found");
+        assertThat(exception.getMessage()).contains("Unauthorized user upload");
     }
 
     @Test
@@ -149,7 +173,7 @@ public class UploadServiceIntegrationTest {
                 FileType.PNG, "https://example.com/file.PDF");
 
         DeckNotFoundException exception = assertThrows(DeckNotFoundException.class, () -> {
-            uploadService.createUpload(uploadCreateDto, 1024L);
+            uploadService.createUpload(uploadCreateDto, 1024L, user.id());
         });
 
         assertThat(exception.getMessage()).contains("Deck with ID " + nonExistentDeckId + " not found");
@@ -165,7 +189,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
  
         Upload retrievedUpload = uploadService.getUploadById(upload.getId());
 
@@ -215,8 +239,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L);
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         List<Upload> uploads = uploadService.getAllUserUploads(user.id());
 
@@ -244,8 +268,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L); 
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id()); 
 
         List<Upload> uploads = uploadService.getAllDeckUploads(deck.getId());
 
@@ -273,8 +297,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L);
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         long count = uploadService.getCountOfAllUserUploads(user.id());
 
@@ -301,8 +325,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L);
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         long count = uploadService.getCountOfAllDeckUploads(deck.getId());
 
@@ -330,7 +354,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.startParsingUpload(upload.getId(), null);
@@ -352,7 +376,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user1.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user1.id());
  
         UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
             uploadService.startParsingUpload(upload.getId(), user2.id());
@@ -382,7 +406,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");  
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.completeParsingUpload(upload.getId(), null);
@@ -412,7 +436,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.failParsingUpload(upload.getId(), null, user.id());
@@ -431,7 +455,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.failParsingUpload(upload.getId(), "Error message", null);
@@ -461,7 +485,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user.id());
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.deleteUploadById(upload.getId(), null);
@@ -483,7 +507,7 @@ public class UploadServiceIntegrationTest {
 
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user1.id(), deck.getId(), "test-file.PDF",
                 FileType.PNG, "https://example.com/file.PDF");
-        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L);
+        Upload upload = uploadService.createUpload(uploadCreateDto, 1024L, user1.id());
 
         UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
             uploadService.deleteUploadById(upload.getId(), user2.id());
@@ -503,8 +527,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        Upload upload1 = uploadService.createUpload(uploadCreateDto1, 1024L);
-        Upload upload2 = uploadService.createUpload(uploadCreateDto2, 2048L);
+        Upload upload1 = uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        Upload upload2 = uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         // Verify uploads exist
         assertThat(uploadService.getAllUserUploads(user.id())).hasSize(2);
@@ -526,6 +550,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllUserUploads_NullUserId_ThrowsInvalidUploadParameterException() {
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.deleteAllUserUploads(null);
@@ -535,6 +560,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllUserUploads_NonExistentUser_ThrowsUserNotFoundException() {
         UUID nonExistentUserId = UUID.randomUUID();
 
@@ -546,6 +572,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllUserUploads_ValidInput_DeletesAllUploads() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -556,8 +583,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L);
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         // Verify uploads exist
         assertThat(uploadService.getAllUserUploads(user.id())).hasSize(2);
@@ -577,6 +604,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllDeckUploads_NullDeckId_ThrowsInvalidUploadParameterException() {
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
             uploadService.deleteAllDeckUploads(null);
@@ -586,6 +614,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllDeckUploads_NonExistentDeck_ThrowsDeckNotFoundException() {
         UUID nonExistentDeckId = UUID.randomUUID();
 
@@ -597,6 +626,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteAllDeckUploads_ValidInput_DeletesAllUploads() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -607,8 +637,8 @@ public class UploadServiceIntegrationTest {
         UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG, "https://example.com/file1.PDF");
         UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG, "https://example.com/file2.JPG");
 
-        uploadService.createUpload(uploadCreateDto1, 1024L);
-        uploadService.createUpload(uploadCreateDto2, 2048L);
+        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
 
         // Verify uploads exist
         assertThat(uploadService.getAllDeckUploads(deck.getId())).hasSize(2);

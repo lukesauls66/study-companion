@@ -39,7 +39,6 @@ public class UploadController {
         return new String();
     }
     
-    //FIXME: add requesting userId to createUpload when auth is done on the method
     @PostMapping("/createUpload")
     public ResponseEntity<String> createNewUpload(@RequestBody UploadDto.Create uploadDto, @RequestParam MultipartFile file,
                                    Authentication authentication) {
@@ -55,7 +54,7 @@ public class UploadController {
 
         long fileSize = file.getSize();
 
-        // uploadService.createUpload(uploadDto, fileSize, requestingUserId);
+        uploadService.createUpload(uploadDto, fileSize, requestingUserId);
         return ResponseEntity.ok("Successfully created new upload");
     }
 }

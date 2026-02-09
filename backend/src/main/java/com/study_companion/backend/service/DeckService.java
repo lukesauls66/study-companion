@@ -3,6 +3,8 @@ package com.study_companion.backend.service;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.study_companion.backend.dto.DeckDto;
@@ -13,6 +15,7 @@ import com.study_companion.backend.exception.deck.InvalidDeckCreationException;
 import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
+import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
@@ -124,13 +127,29 @@ public class DeckService {
      * @return a list of all decks in the system
      * @throws DeckOperationException if server error occurs
      */
-    // FIXME: Add requestUUID and only fetch if UUID belongs to an admin
     public List<Deck> getAllDecks() {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+            }
+            
             logger.debug("Fetching all decks");
             List<Deck> decks = deckRepository.findAll();
             logger.info("Successfully fetched all decks");
             return decks;
+        } catch (DeckException e) {
+            logger.error("Deck operation failed: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all decks: {}", e.getMessage());
             throw new DeckOperationException("Failed to fetch all decks", e);
@@ -312,13 +331,26 @@ public class DeckService {
      * @throws UserOperationException        if user operations fail
      * @throws DeckOperationException        if server error occurs
      */
-    // FIXME: Add requestUUID and only delete if UUID belongs to an admin
     public void deleteAllUserDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidDeckParameterException("userId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUploadAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+            }
+
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -330,6 +362,9 @@ public class DeckService {
             logger.info("Successfully deleted all decks belonging to the associated user");
         } catch (UserException e) {
             logger.error("Deck deletions failed due to user issue: {}", e.getMessage());
+            throw e;
+        } catch (DeckException e) {
+            logger.error("Deck operation failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to delete decks: {}", e.getMessage());
