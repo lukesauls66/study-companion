@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.study_companion.backend.dto.UploadDto;
+import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.service.UploadService;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -34,9 +35,34 @@ public class UploadController {
         this.uploadService = uploadService;
     }
 
-    @GetMapping("path")
-    public String getMethodName(@RequestParam String param) {
-        return new String();
+    @GetMapping("/getAllUploads")
+    public List<Upload> getAllUploads() {
+        return uploadService.getAllUploads();
+    }
+    
+    @GetMapping("/{uploadId}")
+    public Upload getUploadById(@PathVariable UUID uploadId) {
+        return uploadService.getUploadById(uploadId);
+    }
+
+    @GetMapping("/user/{userId}")
+    public List<Upload> getUserUploads(@PathVariable UUID userId) {
+        return uploadService.getAllUserUploads(userId);
+    }
+
+    @GetMapping("/user/{userId}/count")
+    public long countUserUploads(@PathVariable UUID userId) {
+        return uploadService.getCountOfAllUserUploads(userId);
+    }
+
+    @GetMapping("/deck/{deckId}")
+    public List<Upload> getDeckUploads(@PathVariable UUID deckId) {
+        return uploadService.getAllDeckUploads(deckId);
+    }
+    
+    @GetMapping("/deck/{deckId}/count")
+    public long countDeckUploads(@PathVariable UUID deckId) {
+        return uploadService.getCountOfAllDeckUploads(deckId);
     }
     
     @PostMapping("/createUpload")
@@ -56,5 +82,45 @@ public class UploadController {
 
         uploadService.createUpload(uploadDto, fileSize, requestingUserId);
         return ResponseEntity.ok("Successfully created new upload");
+    }
+
+    @PutMapping("/{uploadId}/start")
+    public ResponseEntity<String> startParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString(authentication.getName());
+        uploadService.startParsingUpload(uploadId, requestingUserId);
+        return ResponseEntity.ok("Successfully started parsing");
+    }
+
+    @PutMapping("/{uploadId}/complete")
+    public ResponseEntity<String> completeParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString(authentication.getName());
+        uploadService.completeParsingUpload(uploadId, requestingUserId); 
+        return ResponseEntity.ok("Successfully completed parsing");
+    }
+
+    @PutMapping("/{uploadId}/failed")
+    public ResponseEntity<String> failParsingUpload(@PathVariable UUID uploadId, @RequestBody String errorMessage, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString(authentication.getName()); 
+        uploadService.failParsingUpload(uploadId, errorMessage, requestingUserId);
+        return ResponseEntity.ok("Saved failed parsing job");
+    }
+
+    @DeleteMapping("/delete/{uploadId}")
+    public ResponseEntity<String> deleteUploadById(@PathVariable UUID uploadId, Authentication authentication) {
+        UUID requestingUserId = UUID.fromString(authentication.getName()); 
+        uploadService.deleteUploadById(uploadId, requestingUserId);
+        return ResponseEntity.ok("Successfully deleted upload");
+    }
+
+    @DeleteMapping("/delete/user/{userId}")
+    public ResponseEntity<String> deleteAllUserUploads(@PathVariable UUID userId) {
+        uploadService.deleteAllUserUploads(userId);
+        return ResponseEntity.ok("Successfully deleted all user uploads");
+    }
+
+    @DeleteMapping("/delete/deck/{deckId}")
+    public ResponseEntity<String> deleteAllDeckUploads(@PathVariable UUID deckId) {
+        uploadService.deleteAllDeckUploads(deckId);
+        return ResponseEntity.ok("Successfully deleted all deck uploads");
     }
 }
