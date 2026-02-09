@@ -71,14 +71,11 @@ public class UploadService {
      * @throws UserOperationException          if user operations fail
      * @throws UploadOperationException        if server error occurs
      */
-    public Upload createUpload(UploadDto.Create uploadDto, String fileUrl,
+    //FIXME: create auth flow ASAP
+    public Upload createUpload(UploadDto.Create uploadDto,
             Long fileSize) {
         if (uploadDto == null) {
             throw new InvalidUploadParameterException("Upload data transfer object cannot be null");
-        }
-
-        if (fileUrl == null) {
-            throw new InvalidUploadParameterException("File URL cannot be null");
         }
 
         if (fileSize == null) {
@@ -89,7 +86,7 @@ public class UploadService {
             throw new InvalidUploadCreationException("File name cannot be empty");
         }
 
-        if (fileUrl.trim().isEmpty()) {
+        if (uploadDto.fileUrl().trim().isEmpty()) {
             throw new InvalidUploadCreationException("File URL cannot be empty");
         }
 
@@ -108,7 +105,7 @@ public class UploadService {
             }
 
             logger.debug("Creating user");
-            Upload upload = new Upload(user, deck, uploadDto.fileName().trim(), fileUrl.trim(), uploadDto.fileType(),
+            Upload upload = new Upload(user, deck, uploadDto.fileName().trim(), uploadDto.fileUrl().trim(), uploadDto.fileType(),
                     fileSize);
 
             logger.debug("Saving new upload to database");
