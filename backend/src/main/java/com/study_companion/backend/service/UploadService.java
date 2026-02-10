@@ -61,18 +61,22 @@ public class UploadService {
      * @param fileSize         the size of the uploaded file in bytes
      * @param requestingUserId the id belonging to the user making the request
      * @return the created upload with generated ID and timestamps
-     * @throws InvalidUploadParameterException if any nonnull arg is null
-     * @throws InvalidUserParameterException   if the userId is invalid
-     * @throws InvalidDeckParameterException   if the deckId is invalid
-     * @throws InvalidUploadCreationException  if fileName is blank or fileUrl is
-     *                                         blank or fileSize is invalid
-     * @throws UnauthorizedDeckAccessException if the user is not the deck owner
-     * @throws UserNotFoundException           if the specified user does not exist
-     * @throws DeckNotFoundException           if the specified deck does not exist
-     * @throws DeckOperationException          if deck operations fail
-     * @throws UserOperationException          if user operations fail
-     * @throws UploadOperationException        if server error occurs
+     * @throws InvalidUploadParameterException   if any nonnull arg is null
+     * @throws InvalidUploadCreationException    if fileName is blank or fileUrl is
+     *                                           blank or fileSize is invalid
+     * @throws UnauthorizedDeckAccessException   if the user is not the deck owner
+     * @throws UnauthorizedUploadAccessException if the userId associated with the
+     *                                           uploadDto does not match the
+     *                                           requestingUserId
+     * @throws UserNotFoundException             if the specified user does not
+     *                                           exist
+     * @throws DeckNotFoundException             if the specified deck does not
+     *                                           exist
+     * @throws DeckOperationException            if deck operations fail
+     * @throws UserOperationException            if user operations fail
+     * @throws UploadOperationException          if server error occurs
      */
+    @SuppressWarnings("null")
     public Upload createUpload(UploadDto.Create uploadDto,
             Long fileSize, UUID requestingUserId) {
         if (uploadDto == null) {

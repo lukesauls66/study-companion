@@ -16,6 +16,7 @@ import com.study_companion.backend.dto.DeckDto;
 import com.study_companion.backend.dto.UploadDto;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
+import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.exception.upload.InvalidUploadCreationException;
 import com.study_companion.backend.exception.upload.InvalidUploadParameterException;
 import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
@@ -45,6 +46,7 @@ public class UploadServiceIntegrationTest {
     @Autowired
     private DeckService deckService;
 
+    @SuppressWarnings("null")
     @Test
     void createUpload_ValidInput_ReturnsUpload() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -180,6 +182,66 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    void createUpload_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.Get user = userService.createUser(userCreateDto);
+        
+        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user2.id(), "Test Deck", "Testing");
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.png",
+                FileType.PNG, "https://example.com/files/test-file.png"); 
+        Long fileSize = 1024L; 
+
+        UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
+            uploadService.createUpload(uploadCreateDto, fileSize, user.id()); 
+        });
+
+        assertThat(exception.getMessage()).contains("You can only upload files to your own decks");
+    }
+
+    @Test
+    void createUpload_InvalidRequestingUser_ThrowsUnauthorizedUploadAccessException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.Get user = userService.createUser(userCreateDto);
+        
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.png",
+                FileType.PNG, "https://example.com/files/test-file.png"); 
+        Long fileSize = 1024L; 
+
+        UUID invalidUserId = UUID.randomUUID();
+        UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
+            uploadService.createUpload(uploadCreateDto, fileSize, invalidUserId); 
+        });
+
+        assertThat(exception.getMessage()).contains("Unauthorized user upload");
+    }
+
+    //FIXME: asap
+    @Test
+    void createUpload_EmptyFileName_ThrowsInvalidUploadCreationException() {
+
+    }
+
+    //FIXME: asap
+    @Test
+    void createUpload_EmptyFileUrl_ThrowsInvalidUploadCreationException() {
+
+    }
+
+    //FIXME: asap
+    @Test 
+    void  createUpload_EmptyFileSize_ThrowsInvalidUploadCreationException() {
+
+    }
+
+    @Test
     void getUploadById_ValidInput_ReturnsUpload() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -217,6 +279,19 @@ public class UploadServiceIntegrationTest {
         });
 
         assertThat(exception.getMessage()).isEqualTo("Upload with ID " + nonExistentId + " not found");
+    }
+
+    // FIXME: asap
+    @Test
+    void getAllUploads_ValidInput_ReturnsUploads() {
+
+    }
+
+    //FIXME: asap
+    @Test
+    @WithMockUser(roles = "User")
+    void getAllUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException () {
+
     }
 
     @Test
@@ -516,6 +591,7 @@ public class UploadServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("You can only delete your own uploads");
     }
 
+    @SuppressWarnings("null")
     @Test 
     void deleteUploadById_ValidInput_DeletesUpload() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -571,6 +647,7 @@ public class UploadServiceIntegrationTest {
         assertThat(exception.getMessage()).contains("User not found");
     }
 
+    @SuppressWarnings("null")
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllUserUploads_ValidInput_DeletesAllUploads() {
@@ -625,6 +702,7 @@ public class UploadServiceIntegrationTest {
         assertThat(exception.getMessage()).contains("Deck with ID " + nonExistentDeckId + " not found");
     }
 
+    @SuppressWarnings("null")
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllDeckUploads_ValidInput_DeletesAllUploads() {
