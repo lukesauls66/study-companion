@@ -14,14 +14,12 @@ import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessExce
 import com.study_companion.backend.exception.upload.UploadException;
 import com.study_companion.backend.exception.upload.UploadNotFoundException;
 import com.study_companion.backend.exception.upload.UploadOperationException;
-import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.exception.user.UserOperationException;
 import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
-import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.Upload;
@@ -76,7 +74,6 @@ public class UploadService {
      * @throws UserOperationException            if user operations fail
      * @throws UploadOperationException          if server error occurs
      */
-    @SuppressWarnings("null")
     public Upload createUpload(UploadDto.Create uploadDto,
             Long fileSize, UUID requestingUserId) {
         if (uploadDto == null) {
