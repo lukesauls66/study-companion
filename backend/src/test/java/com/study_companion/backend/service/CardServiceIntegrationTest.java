@@ -126,6 +126,24 @@ public class CardServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Answer cannot be empty");
     }
 
+    // FIXME: asap
+    @Test
+    void createCard_NullCardDto_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void createCard_NullCreationType_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void createCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+
+    }
+
     @Test
     void getCardById_ValidInput_ReturnsCard() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -145,6 +163,12 @@ public class CardServiceIntegrationTest {
         assertThat(card.getAnswer()).isEqualTo("Test answer");
         assertThat(card.getImageUrl()).isEqualTo(null);
         assertThat(card.getCreationType()).isEqualTo(CardCreationType.MANUAL_UPLOAD);
+    }
+
+    // FIXME: asap
+    @Test
+    void getCardById_NullId_ThrowsInvalidCardParameterException() {
+
     }
 
     @Test
@@ -194,8 +218,15 @@ public class CardServiceIntegrationTest {
                 CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
+    // FIXME: asap
     @Test
-    void GetAllDeckCards_ValidInput_ReturnsCards() {
+    @WithMockUser(roles = "USER")
+    void getAllCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
+
+    }
+
+    @Test
+    void getAllDeckCards_ValidInput_ReturnsCards() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -225,6 +256,12 @@ public class CardServiceIntegrationTest {
                 CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
+    // FIXME: asap
+    @Test
+    void getAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+
+    }
+
     @Test
     void getCountOfAllDeckCards_ValidInput_ReturnsCardCount() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -247,6 +284,12 @@ public class CardServiceIntegrationTest {
         long cardCount = cardService.getCountOfAllDeckCards(deck.getId());
 
         assertThat(cardCount).isEqualTo(3);
+    }
+
+    // FIXME: asap
+    @Test
+    void getCountOfAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+
     }
 
     @Test
@@ -273,6 +316,24 @@ public class CardServiceIntegrationTest {
         assertThat(updatedCard.getAnswer()).isEqualTo("Updated answer");
         assertThat(updatedCard.getImageUrl()).isEqualTo("updated-image.jpg");
         assertThat(updatedCard.getCreationType()).isEqualTo(CardCreationType.MANUAL_UPLOAD);
+    }
+
+    // FIXME: asap
+    @Test
+    void updateCard_NullCardId_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void updateCard_NullCardDto_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void updateCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+
     }
 
     @Test
@@ -346,6 +407,18 @@ public class CardServiceIntegrationTest {
         assertThat(refreshedDeck2.getCards()).hasSize(0);
     }
 
+    // FIXME: asap
+    @Test
+    void deleteCardById_NullCardId_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void deleteCardById_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+
+    }
+
     @Test
     void deleteCardById_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -396,5 +469,19 @@ public class CardServiceIntegrationTest {
 
         Deck refreshedDeck2 = deckService.getDeckById(deck.getId());
         assertThat(refreshedDeck2.getCards()).hasSize(0);
+    }
+
+    // FIXME: asap
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteAllDeckCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
+
     }
 }
