@@ -953,7 +953,6 @@ public class UploadServiceIntegrationTest {
         assertThat(refreshedDeck.getUploads()).hasSize(0);
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "USER")
     void deleteAllDeckUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {

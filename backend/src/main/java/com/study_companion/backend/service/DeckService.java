@@ -124,8 +124,9 @@ public class DeckService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all decks in the system
-     * @throws UnauthorizedDeckAccessException if authorization fails or user is not an admin
-     * @throws DeckOperationException if server error occurs
+     * @throws UnauthorizedDeckAccessException if authorization fails or user is not
+     *                                         an admin
+     * @throws DeckOperationException          if server error occurs
      */
     public List<Deck> getAllDecks() {
         try {
@@ -142,7 +143,7 @@ public class DeckService {
             if (!isAdmin) {
                 throw new UnauthorizedDeckAccessException("Unauthorized user access");
             }
-            
+
             logger.debug("Fetching all decks");
             List<Deck> decks = deckRepository.findAll();
             logger.info("Successfully fetched all decks");

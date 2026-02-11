@@ -17,6 +17,7 @@ import com.study_companion.backend.dto.DeckDto;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.InvalidDeckCreationException;
+import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
@@ -24,17 +25,16 @@ import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UserRepository;
 
-
 @SpringBootTest
 @Transactional
-@Rollback 
+@Rollback
 public class DeckServiceIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
-    private DeckService deckService; 
+    private DeckService deckService;
 
     @Autowired
     private UserService userService;
@@ -54,10 +54,13 @@ public class DeckServiceIntegrationTest {
         assertThat(deck.getDescription()).isEqualTo("Testing");
     }
 
-    // FIXME: asap
     @Test
     void createDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.createDeck(null);
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("Deck data transfer object cannot be null");
     }
 
     @Test
@@ -116,10 +119,13 @@ public class DeckServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Deck with ID " + nonExistentId + " not found");
     }
 
-    // FIXME: asap
     @Test
-    void getDeckById_DeckNotFound_ThrowsDeckNotFoundException() {
+    void getDeckById_NullDeckId_ThrowsInvalidDeckParameterException() {
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.getDeckById(null);
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("ID cannot not be null");
     }
 
     @Test
@@ -142,10 +148,14 @@ public class DeckServiceIntegrationTest {
         assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 2");
     }
 
-    // FIXME: asap
     @Test
-    void getAllDecks_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
+    @WithMockUser(roles = "USER")
+    void getAllDecks_NonAdmin_ThrowsUnauthorizedDeckAccessException() {
+        UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
+            deckService.getAllDecks();
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 
     @Test
@@ -154,16 +164,16 @@ public class DeckServiceIntegrationTest {
         UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
 
         UserDto.Get user1 = userService.createUser(userCreateDto1);
-        UserDto.Get user2 = userService.createUser(userCreateDto2); 
+        UserDto.Get user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
         DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
         DeckDto.Create deckCreateDto3 = new DeckDto.Create(user1.id(), "Test Deck 3", "Testing 3");
 
-        deckService.createDeck(deckCreateDto1); 
+        deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
         deckService.createDeck(deckCreateDto3);
- 
+
         List<Deck> decks = deckService.getAllUserDecks(user1.id());
 
         assertThat(decks).hasSize(2);
@@ -171,10 +181,13 @@ public class DeckServiceIntegrationTest {
         assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 3");
     }
 
-    // FIXME: asap
     @Test
     void getAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.getAllUserDecks(null);
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
     }
 
     @Test
@@ -191,17 +204,20 @@ public class DeckServiceIntegrationTest {
 
         deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
-        deckService.createDeck(deckCreateDto3); 
+        deckService.createDeck(deckCreateDto3);
 
         long deckLength = deckService.getCountOfAllUserDecks(user1.id());
 
         assertThat(deckLength).isEqualTo(2);
     }
 
-    // FIXME: asap
     @Test
     void getCountOfAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.getCountOfAllUserDecks(null);
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
     }
 
     @Test
@@ -243,22 +259,55 @@ public class DeckServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("At least one field must be provided for update");
     }
 
-    // FIXME: asap
     @Test
     void updateDeck_NullDeckId_ThrowsInvalidDeckParameterException() {
-        
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Update deckUpdateDto = new DeckDto.Update("", "");
+
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.updateDeck(null, deckUpdateDto, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("deckId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void updateDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.updateDeck(deck.getId(), null, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Deck data transfer object cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void updateDeck_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        DeckDto.Update deckUpdateDto = new DeckDto.Update("", "");
+
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.updateDeck(deck.getId(), deckUpdateDto, null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -292,28 +341,46 @@ public class DeckServiceIntegrationTest {
         Deck deck = deckService.createDeck(deckCreateDto);
 
         User refreshedUser1 = userRepository.findById(user.id())
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
-    
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
         assertThat(refreshedUser1.getDecks()).hasSize(1);
 
-        deckService.deleteDeckById(deck.getId(), user.id()); 
+        deckService.deleteDeckById(deck.getId(), user.id());
 
         User refreshedUser2 = userRepository.findById(user.id())
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
-    
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+
         assertThat(refreshedUser2.getDecks()).hasSize(0);
     }
 
-    // FIXME: asap
     @Test
     void deleteDeckById_NullDeckId_ThrowsInvalidDeckParameterException() {
-        
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.deleteDeckById(null, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("deckId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void deleteDeckById_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.deleteDeckById(deck.getId(), null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -340,7 +407,7 @@ public class DeckServiceIntegrationTest {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
- 
+
         DeckDto.Create deckCreateDto1 = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
         DeckDto.Create deckCreateDto3 = new DeckDto.Create(user.id(), "Test Deck 3", "Testing 3");
@@ -350,27 +417,45 @@ public class DeckServiceIntegrationTest {
         deckService.createDeck(deckCreateDto3);
 
         User refreshedUser1 = userRepository.findById(user.id())
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         assertThat(refreshedUser1.getDecks()).hasSize(3);
 
         deckService.deleteAllUserDecks(user.id());
 
         User refreshedUser2 = userRepository.findById(user.id())
-        .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
         assertThat(refreshedUser2.getDecks()).hasSize(0);
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+        InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
+            deckService.deleteAllUserDecks(null);
+        });
 
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "USER")
     void deleteAllUserDecks_NonAdmin_ThrowsUnauthorizedDeckAccessException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
+        DeckDto.Create deckCreateDto3 = new DeckDto.Create(user.id(), "Test Deck 3", "Testing 3");
+
+        deckService.createDeck(deckCreateDto1);
+        deckService.createDeck(deckCreateDto2);
+        deckService.createDeck(deckCreateDto3);
+
+        UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
+            deckService.deleteAllUserDecks(user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 }
