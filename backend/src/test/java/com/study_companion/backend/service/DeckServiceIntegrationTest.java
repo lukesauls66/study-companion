@@ -304,6 +304,18 @@ public class DeckServiceIntegrationTest {
         assertThat(refreshedUser2.getDecks()).hasSize(0);
     }
 
+    // FIXME: asap
+    @Test
+    void deleteDeckById_NullDeckId_ThrowsInvalidDeckParameterException() {
+        
+    }
+
+    // FIXME: asap
+    @Test
+    void deleteDeckById_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
+
+    }
+
     @Test
     void deleteDeckById_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
@@ -324,7 +336,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void deleteAllUserDecks() {
+    void deleteAllUserDecks_ValidInput() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -346,5 +358,19 @@ public class DeckServiceIntegrationTest {
         User refreshedUser2 = userRepository.findById(user.id())
         .orElseThrow(() -> new UserNotFoundException("User not found"));
         assertThat(refreshedUser2.getDecks()).hasSize(0);
+    }
+
+    // FIXME: asap
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void deleteAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    @WithMockUser(roles = "USER")
+    void deleteAllUserDecks_NonAdmin_ThrowsUnauthorizedDeckAccessException() {
+
     }
 }
