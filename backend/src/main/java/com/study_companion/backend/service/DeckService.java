@@ -125,6 +125,7 @@ public class DeckService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all decks in the system
+     * @throws UnauthorizedUploadAccessException if authorization fails or user is not an admin
      * @throws DeckOperationException if server error occurs
      */
     public List<Deck> getAllDecks() {

@@ -54,6 +54,12 @@ public class DeckServiceIntegrationTest {
         assertThat(deck.getDescription()).isEqualTo("Testing");
     }
 
+    // FIXME: asap
+    @Test
+    void createDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
+
+    }
+
     @Test
     void createDeck_BlankTitle_ThrowsInvalidDeckCreationException() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
@@ -110,9 +116,15 @@ public class DeckServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Deck with ID " + nonExistentId + " not found");
     }
 
+    // FIXME: asap
+    @Test
+    void getDeckById_DeckNotFound_ThrowsDeckNotFoundException() {
+
+    }
+
     @Test
     @WithMockUser(roles = "ADMIN")
-    void getAllDecks_ReturnsDecks() {
+    void getAllDecks_ValidInput_ReturnsDecks() {
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -130,8 +142,14 @@ public class DeckServiceIntegrationTest {
         assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 2");
     }
 
+    // FIXME: asap
     @Test
-    void getAllUserDecks_ReturnsDecks() {
+    void getAllDecks_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
+
+    }
+
+    @Test
+    void getAllUserDecks_ValidInput_ReturnsDecks() {
         UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
 
@@ -153,8 +171,14 @@ public class DeckServiceIntegrationTest {
         assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 3");
     }
 
+    // FIXME: asap
     @Test
-    void countAllUserDecks_ReturnsNumOfDecks() {
+    void getAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+
+    }
+
+    @Test
+    void getCountOfAllUserDecks_ValidInput_ReturnsNumOfDecks() {
         UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
         UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
 
@@ -172,6 +196,12 @@ public class DeckServiceIntegrationTest {
         long deckLength = deckService.getCountOfAllUserDecks(user1.id());
 
         assertThat(deckLength).isEqualTo(2);
+    }
+
+    // FIXME: asap
+    @Test
+    void getCountOfAllUserDecks_NullUserId_ThrowsInvalidDeckParameterException() {
+
     }
 
     @Test
@@ -213,9 +243,27 @@ public class DeckServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("At least one field must be provided for update");
     }
 
+    // FIXME: asap
+    @Test
+    void updateDeck_NullDeckId_ThrowsInvalidDeckParameterException() {
+        
+    }
+
+    // FIXME: asap
+    @Test
+    void updateDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
+
+    }
+
+    // FIXME: asap
+    @Test
+    void updateDeck_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
+
+    }
+
     @Test
     void updateDeck_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
-        UUID unathorizedUUID = UUID.randomUUID();
+        UUID unauthorizedUUID = UUID.randomUUID();
         UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
@@ -227,7 +275,7 @@ public class DeckServiceIntegrationTest {
         DeckDto.Update deckUpdateDto = new DeckDto.Update("Update Test Deck", "Update Testing");
 
         UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
-            deckService.updateDeck(deck.getId(), deckUpdateDto, unathorizedUUID);
+            deckService.updateDeck(deck.getId(), deckUpdateDto, unauthorizedUUID);
         });
 
         assertThat(exception.getMessage()).isEqualTo("You can only update your own decks");
