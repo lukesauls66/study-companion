@@ -18,6 +18,7 @@ import com.study_companion.backend.dto.DeckDto;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.card.CardNotFoundException;
 import com.study_companion.backend.exception.card.InvalidCardCreationException;
+import com.study_companion.backend.exception.card.InvalidCardParameterException;
 import com.study_companion.backend.exception.card.InvalidCardUpdateException;
 import com.study_companion.backend.exception.card.UnauthorizedCardAccessException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
@@ -126,22 +127,55 @@ public class CardServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Answer cannot be empty");
     }
 
-    // FIXME: asap
     @Test
     void createCard_NullCardDto_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.createCard(null, CardCreationType.MANUAL_UPLOAD, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Card data transfer object cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void createCard_NullCreationType_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.createCard(cardCreateDto, null, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("creationType cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void createCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -165,10 +199,25 @@ public class CardServiceIntegrationTest {
         assertThat(card.getCreationType()).isEqualTo(CardCreationType.MANUAL_UPLOAD);
     }
 
-    // FIXME: asap
     @Test
     void getCardById_NullId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.getCardById(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("id cannot be null");
     }
 
     @Test
@@ -218,11 +267,35 @@ public class CardServiceIntegrationTest {
                 CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "USER")
     void getAllCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
+        UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
+        UserDto.Get user1 = userService.createUser(userCreateDto1);
+        UserDto.Get user2 = userService.createUser(userCreateDto2);
+
+        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
+        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
+
+        Deck deck1 = deckService.createDeck(deckCreateDto1);
+        Deck deck2 = deckService.createDeck(deckCreateDto2);
+
+        CardDto.Create cardCreateDto1 = new CardDto.Create(deck1.getId(), "Test question?", "Test answer", null);
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck1.getId(), "Test question 2?", "Test answer 2", null);
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck2.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
+
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user1.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user1.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user2.id());
+
+        UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
+            cardService.getAllCards();
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 
     @Test
@@ -256,10 +329,30 @@ public class CardServiceIntegrationTest {
                 CardCreationType.MANUAL_UPLOAD, CardCreationType.MANUAL_UPLOAD);
     }
 
-    // FIXME: asap
     @Test
     void getAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
+
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.getAllDeckCards(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("deckId cannot be null");
     }
 
     @Test
@@ -286,10 +379,30 @@ public class CardServiceIntegrationTest {
         assertThat(cardCount).isEqualTo(3);
     }
 
-    // FIXME: asap
     @Test
     void getCountOfAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
+
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.getCountOfAllDeckCards(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("deckId cannot be null");
     }
 
     @Test
@@ -318,22 +431,71 @@ public class CardServiceIntegrationTest {
         assertThat(updatedCard.getCreationType()).isEqualTo(CardCreationType.MANUAL_UPLOAD);
     }
 
-    // FIXME: asap
     @Test
     void updateCard_NullCardId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.updateCard(null, cardUpdateDto, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("cardId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void updateCard_NullCardDto_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.updateCard(card.getId(), null, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Card data transfer object cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void updateCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.updateCard(card.getId(), cardUpdateDto, null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -407,16 +569,46 @@ public class CardServiceIntegrationTest {
         assertThat(refreshedDeck2.getCards()).hasSize(0);
     }
 
-    // FIXME: asap
     @Test
     void deleteCardById_NullCardId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.deleteCardById(null, user.id());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("cardId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     void deleteCardById_NullRequestingUserId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+
+        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.deleteCardById(card.getId(), null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
@@ -471,17 +663,60 @@ public class CardServiceIntegrationTest {
         assertThat(refreshedDeck2.getCards()).hasSize(0);
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
+
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+            cardService.deleteAllDeckCards(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("deckId cannot be null");
     }
 
-    // FIXME: asap
     @Test
     @WithMockUser(roles = "USER")
     void deleteAllDeckCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
+        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
+        UserDto.Get user = userService.createUser(userCreateDto);
+
+        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+
+        Deck deck = deckService.createDeck(deckCreateDto);
+
+        CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
+        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                "testurl.jpg");
+
+        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
+
+        Deck refreshedDeck1 = deckService.getDeckById(deck.getId());
+        assertThat(refreshedDeck1.getCards()).hasSize(3);
+
+        UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
+            cardService.deleteAllDeckCards(deck.getId());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 }
