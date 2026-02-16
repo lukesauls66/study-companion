@@ -1,5 +1,12 @@
 {
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.compile.nullAnalysis.mode": "automatic",
-  "cSpell.words": ["springframework"]
+  "cSpell.words": [
+    "assertj",
+    "differentpassword",
+    "newpassword",
+    "springframework",
+    "testurl",
+    "wrongpassword"
+  ]
 }

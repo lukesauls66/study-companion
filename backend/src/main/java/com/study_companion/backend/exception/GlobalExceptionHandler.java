@@ -35,6 +35,7 @@ import com.study_companion.backend.exception.user.InvalidPasswordChangeException
 import com.study_companion.backend.exception.user.InvalidUserCreationException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.InvalidUserUpdateException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.exception.user.UserAlreadyExistsException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
@@ -53,6 +54,11 @@ public class GlobalExceptionHandler {
     // User exceptions
     @ExceptionHandler(UserException.class)
     public ResponseEntity<String> handleUserException(UserException e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedUserAccessException.class)
+    public ResponseEntity<String> handleUnauthorizedUserAccess(UnauthorizedUserAccessException e) {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
             

@@ -15,7 +15,6 @@ import com.study_companion.backend.exception.deck.InvalidDeckCreationException;
 import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
-import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
@@ -125,14 +124,16 @@ public class DeckService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all decks in the system
-     * @throws DeckOperationException if server error occurs
+     * @throws UnauthorizedDeckAccessException if authorization fails or user is not
+     *                                         an admin
+     * @throws DeckOperationException          if server error occurs
      */
     public List<Deck> getAllDecks() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedUploadAccessException("Authentication required");
+                throw new UnauthorizedDeckAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -142,7 +143,7 @@ public class DeckService {
             if (!isAdmin) {
                 throw new UnauthorizedDeckAccessException("Unauthorized user access");
             }
-            
+
             logger.debug("Fetching all decks");
             List<Deck> decks = deckRepository.findAll();
             logger.info("Successfully fetched all decks");
@@ -340,7 +341,7 @@ public class DeckService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedUploadAccessException("Authentication required");
+                throw new UnauthorizedDeckAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()

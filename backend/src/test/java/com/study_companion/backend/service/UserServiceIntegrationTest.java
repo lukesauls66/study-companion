@@ -2,6 +2,7 @@ package com.study_companion.backend.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +16,9 @@ import java.util.UUID;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.exception.user.InvalidPasswordChangeException;
 import com.study_companion.backend.exception.user.InvalidUserCreationException;
+import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.InvalidUserUpdateException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.exception.user.UserAlreadyExistsException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.model.Role;
@@ -37,6 +40,15 @@ public class UserServiceIntegrationTest {
         assertThat(user.email()).isEqualTo("test@email.com");
         assertThat(user.name()).isEqualTo("John Smith");
         assertThat(user.username()).isEqualTo("john123");
+    }
+
+    @Test
+    void createUser_NullUserDto_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.createUser(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("User data cannot be null when creating a user");
     }
  
     @Test
@@ -110,6 +122,15 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    void getUserById_NullId_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.getUserById(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("ID cannot be null");
+    }
+
+    @Test
     void getUserById_NonExistentId_ThrowsUserNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -130,6 +151,15 @@ public class UserServiceIntegrationTest {
         assertThat(user.email()).isEqualTo("test@email.com");
         assertThat(user.name()).isEqualTo("John Smith");
         assertThat(user.username()).isEqualTo("john123");
+    }
+
+    @Test
+    void getUserByEmail_NullEmail_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.getUserByEmail(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Email cannot be null");
     }
  
     @Test
@@ -156,6 +186,15 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    void getUserByUsername_NullUsername_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.getUserByUsername(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Username cannot be null");
+    }
+
+    @Test
     void getUserByUsername_NonExistentId_ThrowsUserNotFoundException() {
         String usernameString = "example123";
 
@@ -167,7 +206,8 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    void getAllUsers_ReturnsUsers() {
+    @WithMockUser(roles = "ADMIN")
+    void getAllUsers_ValidInput_ReturnsUsers() {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
@@ -186,7 +226,18 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    void getAllUsersOfARole_ReturnsUsers() {
+    @WithMockUser(roles = "USER")
+    void getAllUsers_NonAdmin_ThrowsUnauthorizedUserAccessException() {
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
+            userService.getAllUsers();
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getAllUsersOfARole_ValidInput_ReturnsUsers() {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
@@ -201,7 +252,53 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    void getAllUsersOfVerifiedStatus_ReturnsUsers() {
+    @WithMockUser(roles = "ADMIN")
+    void getAllUsersOfARole_NullRole_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.getAllUsersOfARole(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Roll cannot be null");
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getAllUsersOfARole_NonAdmin_ThrowsUnauthorizedUserAccessException() {
+        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+
+        userService.createUser(createDto1);
+        userService.createUser(createDto2);
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
+            userService.getAllUsersOfARole(Role.USER);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+    }
+
+    @Test
+    void verifyUser_ValidInput_ReturnsUser() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+    
+        UserDto.Get user1 = userService.createUser(createDto);
+
+        UserDto.Get verifiedUser = userService.verifyUser(user1.id());
+
+        assertThat(verifiedUser.isVerified()).isTrue();
+    }
+
+    @Test
+    void verifyUser_NullUserId_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.verifyUser(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
+    }
+
+    @Test
+    void getAllUsersOfVerifiedStatus_ValidInput_ReturnsUsers() {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
         UserDto.Create createDto3 = new UserDto.Create("test3@email.com", "Jacob Smith", "jacob123", "password3");
@@ -221,7 +318,8 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    void getAllUsersInactiveSinceDate_ReturnsUsers() {
+    @WithMockUser(roles = "ADMIN")
+    void getAllUsersInactiveSinceDate_ValidInput_ReturnsUsers() {
         UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
         UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
 
@@ -240,6 +338,41 @@ public class UserServiceIntegrationTest {
         List<UserDto.Get> users = userService.getInactiveUsersSince(LocalDateTime.now());
 
         assertThat(users).hasSize(2);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void getAllUsersInactiveSinceDate_NullDate_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.getInactiveUsersSince(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Date cannot be null");
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void getAllUsersInactiveSinceDate_NonAdmin_ThrowsUnauthorizedUserAccessException() {
+        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+
+        UserDto.Get user1 = userService.createUser(createDto1);
+        UserDto.Get user2 = userService.createUser(createDto2);
+
+        userService.updateLastLogin(user1.id());
+        userService.updateLastLogin(user2.id());
+
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
+            userService.getInactiveUsersSince(LocalDateTime.now());
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 
     @Test
@@ -314,6 +447,69 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    void updateUser_NullUserId_ThrowsInvalidUserParameterException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+
+        userService.createUser(createDto);
+
+        UserDto.Update dto = new UserDto.Update("test@email.com", "Jacob Smith", "jacob123");
+
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.updateUser(null, dto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
+    }
+
+    @Test
+    void updateUser_NullUserDto_ThrowsInvalidUserParameterException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+
+        UserDto.Get user = userService.createUser(createDto);
+
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.updateUser(user.id(), null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("User data transfer object cannot be null");
+    }
+
+    @Test
+    void updateUserPassword_ValidInput_ReturnsUser() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+
+        UserDto.Get user = userService.createUser(createDto);
+
+        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
+    
+        userService.updateUserPassword(user.id(), changeDto);
+    }
+
+    @Test
+    void updateUserPassword_NullUserId_ThrowsInvalidUserParameterException() {
+        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
+    
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.updateUserPassword(null, changeDto);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
+    }
+
+    @Test
+    void updateUserPassword_NullUserDto_ThrowsInvalidUserParameterException() {
+        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+
+        UserDto.Get user = userService.createUser(createDto);
+
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.updateUserPassword(user.id(), null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("User data transfer object cannot be null");
+    }
+
+    @Test
     void updateUserPassword_WrongCurrentPassword_ThrowsInvalidPasswordChangeException() {
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
@@ -372,7 +568,8 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    void deleteUser() {
+    @WithMockUser(roles = "ADMIN")
+    void deleteUser_ValidInput() { 
         UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
@@ -384,6 +581,15 @@ public class UserServiceIntegrationTest {
         users = userService.getAllUsers();
  
         assertThat(users).hasSize(0);
+    }
+
+    @Test
+    void deleteUser_NullUserId_ThrowsInvalidUserParameterException() {
+        InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
+            userService.deleteUser(null);
+        });
+
+        assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
     }
 }
   

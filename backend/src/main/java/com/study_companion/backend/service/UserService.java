@@ -9,6 +9,7 @@ import com.study_companion.backend.exception.user.InvalidPasswordChangeException
 import com.study_companion.backend.exception.user.InvalidUserCreationException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
 import com.study_companion.backend.exception.user.InvalidUserUpdateException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.exception.user.UserAlreadyExistsException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
@@ -18,6 +19,8 @@ import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -72,15 +75,7 @@ public class UserService {
             if (userRepository.existsByEmail(userDto.email())) {
                 throw new UserAlreadyExistsException("User with this email already exists");
             }
-        } catch (UserAlreadyExistsException e) {
-            logger.error("User with this email already exists: {}", e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            logger.error("Failed to check email uniqueness: {}", e.getMessage());
-            throw new UserOperationException("Failed to check email uniqueness", e);
-        }
 
-        try {
             logger.debug("Creating user");
             User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),
                     passwordEncoder.encode(userDto.password().trim()));
@@ -88,6 +83,9 @@ public class UserService {
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
             return convertToDto(savedUser);
+        } catch (UserAlreadyExistsException e) {
+            logger.error("User with this email already exists: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to create user: {}", e.getMessage());
             throw new UserOperationException("Failed to create user", e);
@@ -196,14 +194,32 @@ public class UserService {
      * Should typically be restricted to admin users in production.
      * 
      * @return a list of all users in the system
+     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
      * @throws UserOperationException if server error occurs
      */
     public List<UserDto.Get> getAllUsers() {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+                    
             logger.debug("Searching for all users");
             List<UserDto.Get> users = userRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Found all users");
             return users;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("UnauthorizedUser: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all users: {}", e.getMessage());
             throw new UserOperationException("Failed to fetch users", e);
@@ -217,6 +233,7 @@ public class UserService {
      * @param role the role to filter users by
      * @return a list of users with the specified role
      * @throws InvalidUserParameterException if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
      * @throws UserOperationException        if server error occurs
      */
     public List<UserDto.Get> getAllUsersOfARole(Role role) {
@@ -225,10 +242,27 @@ public class UserService {
         }
 
         try { 
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             logger.debug("Searching for users with role: {}", role);
             List<UserDto.Get> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList(); 
             logger.info("Found users with provided role");
             return users; 
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("UnauthorizedUser: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch users of provided role {}: {}", role, e.getMessage());
             throw new UserOperationException("Failed to fetch users of " + role + " role", e);
@@ -329,6 +363,7 @@ public class UserService {
      *             considered inactive
      * @return a list of users who haven't logged in since the specified date
      * @throws InvalidUserParameterException if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
      * @throws UserOperationException        if server error occurs
      */
     public List<UserDto.Get> getInactiveUsersSince(LocalDateTime date) {
@@ -337,10 +372,27 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             logger.debug("Searching for users that have not logged in since {}", date);
             List<UserDto.Get> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all users that have not logged in since {}", date);
             return users;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("UnauthorizedUser: {}", e.getMessage());
+            throw e;
         } catch (Exception e) { 
             logger.error("Failed to fetch users that have not logged in since {}: {}", date, e.getMessage());
             throw new UserOperationException("Failed to get users that have not logged in since " + date, e);
@@ -517,6 +569,7 @@ public class UserService {
                 user.getName(),
                 user.getUsername(),
                 user.getRole(),
+                user.isVerified(),
                 user.getCreatedAt(),
                 user.getUpdatedAt());
     }

@@ -20,7 +20,6 @@ import com.study_companion.backend.exception.card.InvalidCardParameterException;
 import com.study_companion.backend.exception.card.InvalidCardUpdateException;
 import com.study_companion.backend.exception.card.UnauthorizedCardAccessException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
-import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessException;
 import com.study_companion.backend.model.CardCreationType;
 import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
@@ -155,14 +154,15 @@ public class CardService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all cards in the system
-     * @throws CardOperationException if server error occurs
+     * @throws UnauthorizedCardAccessException if requesting user is not an admin
+     * @throws CardOperationException          if server error occurs
      */
     public List<Card> getAllCards() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedUploadAccessException("Authentication required");
+                throw new UnauthorizedCardAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -360,11 +360,13 @@ public class CardService {
      * Currently unrestricted - should be limited to admin users in production
      * 
      * @param deckId the UUID of the deck whose cards to delete
-     * @throws InvalidCardParameterException if any nonnull arg is null
-     * @throws InvalidDeckParameterException if the deckId is invalid
-     * @throws DeckNotFoundException         if the specified deck does not exist
-     * @throws DeckOperationException        if deck operations fail
-     * @throws CardOperationException        if server error occurs
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws InvalidDeckParameterException   if the deckId is invalid
+     * @throws DeckNotFoundException           if the specified deck does not exist
+     * @throws UnauthorizedCardAccessException if authentication fails or requesting
+     *                                         user is not an admin
+     * @throws DeckOperationException          if deck operations fail
+     * @throws CardOperationException          if server error occurs
      */
     public void deleteAllDeckCards(UUID deckId) {
         if (deckId == null) {
@@ -375,7 +377,7 @@ public class CardService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedUploadAccessException("Authentication required");
+                throw new UnauthorizedCardAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
