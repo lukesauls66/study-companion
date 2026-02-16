@@ -8,7 +8,7 @@ import com.study_companion.backend.model.Role;
 import jakarta.validation.constraints.NotNull;
  
 public class UserDto{
-    public record Get(@NotNull UUID id, @NotNull String email, @NotNull String name, @NotNull String username, Role role, LocalDateTime createdAt, LocalDateTime updatedAt) {}
+    public record Get(@NotNull UUID id, @NotNull String email, @NotNull String name, @NotNull String username, Role role, boolean isVerified, LocalDateTime createdAt, LocalDateTime updatedAt) {}
 
     public record Create(@NotNull String email, @NotNull String name, @NotNull String username, @NotNull String password) {}
 
