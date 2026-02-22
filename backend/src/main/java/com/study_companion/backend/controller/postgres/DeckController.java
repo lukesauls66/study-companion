@@ -3,6 +3,7 @@ package com.study_companion.backend.controller.postgres;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -51,29 +52,29 @@ public class DeckController {
     }
 
     @PostMapping("/createDeck")
-    public ResponseEntity<String> postMethodName(@RequestBody DeckDto.Create deckDto) {
-        deckService.createDeck(deckDto);
-        return ResponseEntity.ok("Successfully created new deck");
+    public ResponseEntity<Deck> postMethodName(@RequestBody DeckDto.Create deckDto) {
+        Deck newDeck = deckService.createDeck(deckDto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newDeck);
     }
 
     @PutMapping("/update/{deckId}")
-    public ResponseEntity<String> updateDeck(@PathVariable UUID deckId, @RequestBody DeckDto.Update deckDto,
+    public ResponseEntity<Deck> updateDeck(@PathVariable UUID deckId, @RequestBody DeckDto.Update deckDto,
             Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
-        deckService.updateDeck(deckId, deckDto, requestingUserId);
-        return ResponseEntity.ok("Successfully updated deck");
+        Deck updatedDeck = deckService.updateDeck(deckId, deckDto, requestingUserId);
+        return ResponseEntity.ok(updatedDeck);
     }
 
     @DeleteMapping("/delete/{deckId}")
     public ResponseEntity<String> deleteDeck(@PathVariable UUID deckId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
         deckService.deleteDeckById(deckId, requestingUserId);
-        return ResponseEntity.ok("Successfully deleted deck");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/delete/user/{userId}")
     public ResponseEntity<String> deleteUserDecks(@PathVariable UUID userId) {
         deckService.deleteAllUserDecks(userId);
-        return ResponseEntity.ok("Successfully deleted all user's decks");
+        return ResponseEntity.noContent().build();
     }
 }

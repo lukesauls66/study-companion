@@ -385,45 +385,16 @@ public class SessionCacheServiceIntegrationTest {
         sessionCacheService.createSession(userId, 3600L);
         sessionCacheService.createOrUpdateCachedDecks(userId, new ArrayList<>());
 
-        sessionCacheService.logout(userId);
+        sessionCacheService.clearSessionAndCachedDecks(userId);
     }
 
     @Test 
     void logout_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
-            sessionCacheService.logout(null);
+            sessionCacheService.clearSessionAndCachedDecks(null);
         });
 
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when logging out");
-    }
-
-    @Test 
-    void validateSessionAndCleanupCache_ValidSession_ReturnsTrue() {
-        UUID userId = UUID.randomUUID();
-        
-        sessionCacheService.createSession(userId, 3600L);
-
-        boolean result = sessionCacheService.validateSessionAndCleanupCache(userId);
-
-        assertThat(result).isTrue();
-    }
-
-    @Test 
-    void validateSessionAndCleanupCache_NoSession_ReturnsFalse() {
-        UUID userId = UUID.randomUUID();
-
-        boolean result = sessionCacheService.validateSessionAndCleanupCache(userId);
-
-        assertThat(result).isFalse();
-    }
-
-    @Test 
-    void validateSessionAndCleanupCache_NullUserId_ThrowsInvalidSessionParameterException() {
-        InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
-            sessionCacheService.validateSessionAndCleanupCache(null);
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when validating session");
     }
 
     @Test 

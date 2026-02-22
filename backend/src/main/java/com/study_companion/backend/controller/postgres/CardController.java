@@ -3,6 +3,7 @@ package com.study_companion.backend.controller.postgres;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -53,31 +54,31 @@ public class CardController {
     }
 
     @PostMapping("/createCard")
-    public ResponseEntity<String> createNewCard(@RequestBody CardDto.Create cardDto,
+    public ResponseEntity<Card> createNewCard(@RequestBody CardDto.Create cardDto,
             @RequestParam CardCreationType cardCreationType, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
-        cardService.createCard(cardDto, cardCreationType, requestingUserId);
-        return ResponseEntity.ok("Successfully created new card");
+        Card newCard = cardService.createCard(cardDto, cardCreationType, requestingUserId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newCard);
     }
 
     @PutMapping("/update/{cardId}")
-    public ResponseEntity<String> updateCard(@PathVariable UUID cardId, @RequestBody CardDto.Update cardDto,
+    public ResponseEntity<Card> updateCard(@PathVariable UUID cardId, @RequestBody CardDto.Update cardDto,
             Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
-        cardService.updateCard(cardId, cardDto, requestingUserId);
-        return ResponseEntity.ok("Successfully updated card");
+        Card updatedCard = cardService.updateCard(cardId, cardDto, requestingUserId);
+        return ResponseEntity.ok(updatedCard);
     }
 
     @DeleteMapping("/delete/{cardId}")
     public ResponseEntity<String> deleteCard(@PathVariable UUID cardId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
         cardService.deleteCardById(cardId, requestingUserId);
-        return ResponseEntity.ok("Successfully deleted card");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/delete/deck/{deckId}")
     public ResponseEntity<String> deleteDeckCards(@PathVariable UUID deckId) {
         cardService.deleteAllDeckCards(deckId);
-        return ResponseEntity.ok("Successfully deleted all deck's cards");
+        return ResponseEntity.noContent().build();
     }
 }
