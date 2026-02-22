@@ -16,6 +16,7 @@ import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.exception.user.InvalidUserParameterException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.exception.user.UserOperationException;
@@ -102,13 +103,27 @@ public class DeckService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
             logger.debug("Checking if deck exists by provided ID");
             if (!deckRepository.existsById(id)) {
                 throw new DeckNotFoundException("Deck with ID " + id + " not found");
             }
-
             Deck deck = deckRepository.findById(id).get();
             logger.info("Found deck with provided ID");
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin or deck owner");
+            if (!isAdmin && deck.getUser().getId() != UUID.fromString(authentication.getName())) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             return deck;
         } catch (DeckNotFoundException e) {
             logger.error("Deck not found with provided ID: {}", e.getMessage());

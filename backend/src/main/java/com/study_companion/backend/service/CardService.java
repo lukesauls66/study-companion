@@ -20,6 +20,7 @@ import com.study_companion.backend.exception.card.InvalidCardParameterException;
 import com.study_companion.backend.exception.card.InvalidCardUpdateException;
 import com.study_companion.backend.exception.card.UnauthorizedCardAccessException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.model.CardCreationType;
 import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
@@ -132,6 +133,12 @@ public class CardService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
             logger.debug("Checking if card exists");
             if (!cardRepository.existsById(id)) {
                 throw new CardNotFoundException("Card with ID " + id + " not found");
@@ -139,6 +146,15 @@ public class CardService {
 
             Card card = cardRepository.findById(id).get();
             logger.info("Successfully found card by provided id");
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin or card owner");
+            if (!isAdmin && card.getDeck().getUser().getId() != UUID.fromString(authentication.getName())) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             return card;
         } catch (CardNotFoundException e) {
             logger.error("Card does not exist with provided id: {}", e.getMessage());
@@ -200,9 +216,24 @@ public class CardService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
             logger.debug("Fetching all cards belonging to the provided deckId");
             List<Card> cards = cardRepository.findByDeckId(deckId);
             logger.info("Successfully fetched all cards belonging to the provided deckId");
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin or card owner");
+            if (!isAdmin && cards.get(0).getDeck().getUser().getId() != UUID.fromString(authentication.getName())) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             return cards;
         } catch (Exception e) {
             logger.error("Failed to fetch all cards belonging to the provided deckId: {}", e.getMessage());

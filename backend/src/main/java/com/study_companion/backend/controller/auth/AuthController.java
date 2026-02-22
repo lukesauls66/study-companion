@@ -1,5 +1,6 @@
 package com.study_companion.backend.controller.auth;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,6 +18,11 @@ import com.study_companion.backend.dto.LoginRequest;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.service.UserService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -24,6 +30,7 @@ import jakarta.validation.Valid;
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin
+@Tag(name = "Authentication", description = "User authentication and session management")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -35,14 +42,19 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+    @Operation(summary = "Login user", description = "Login user with username and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User logged in"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or user not found")
+    })
+    public ResponseEntity<String> login(
+            @Parameter(description = "Login request containing user username and password") @Valid @RequestBody LoginRequest request,
+            @Parameter(hidden = true) HttpServletRequest httpRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                    request.getUsername(),
-                    request.getPassword()
-                )
-            );
+                    new UsernamePasswordAuthenticationToken(
+                            request.getUsername(),
+                            request.getPassword()));
 
             SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
             securityContext.setAuthentication(authentication);
@@ -58,17 +70,29 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@Valid @RequestBody UserDto.Create request) {
+    @Operation(summary = "Register new user", description = "Create a new user account with name, email, username, and password")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "User registered successfully"),
+            @ApiResponse(responseCode = "400", description = "Invalid input"),
+            @ApiResponse(responseCode = "409", description = "User already exists")
+    })
+    public ResponseEntity<String> register(
+            @Parameter(description = "Register request containing user name, email, username, and password") @Valid @RequestBody UserDto.Create request) {
         try {
             userService.createUser(request);
-            return ResponseEntity.ok("User registered successfully");
+            return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
         }
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    @Operation(summary = "Logout user", description = "Logout user")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "User logged out"),
+            @ApiResponse(responseCode = "400", description = "Invalid input or user not logged in")
+    })
+    public ResponseEntity<String> logout(@Parameter(hidden = true) HttpServletRequest request) {
         HttpSession session = request.getSession(false);
         if (session != null) {
             session.invalidate();

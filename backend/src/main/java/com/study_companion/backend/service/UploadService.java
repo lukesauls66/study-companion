@@ -14,6 +14,7 @@ import com.study_companion.backend.exception.upload.UnauthorizedUploadAccessExce
 import com.study_companion.backend.exception.upload.UploadException;
 import com.study_companion.backend.exception.upload.UploadNotFoundException;
 import com.study_companion.backend.exception.upload.UploadOperationException;
+import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.exception.user.UserOperationException;
@@ -251,9 +252,24 @@ public class UploadService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
             logger.debug("Fetching all uploads belonging to the provided deck");
             List<Upload> uploads = uploadRepository.findByDeckId(deckId);
             logger.info("Successfully fetched all uploads belonging to the provided deck");
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin or upload owner");
+            if (!isAdmin && uploads.get(0).getUser().getId() != UUID.fromString(authentication.getName())) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+            
             return uploads;
         } catch (Exception e) {
             logger.error("Failed to fetch all uploads belonging to the provided deck: {}", e.getMessage());

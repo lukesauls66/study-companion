@@ -48,7 +48,7 @@ public class UserService {
      * @throws InvalidUserCreationException  if any required field is empty
      * @throws UserAlreadyExistsException    if a user with the email already exists
      * @throws UserOperationException        if server error occurs
-     */  
+     */
     public UserDto.Get createUser(UserDto.Create userDto) {
         if (userDto == null) {
             throw new InvalidUserParameterException("User data cannot be null when creating a user");
@@ -194,8 +194,9 @@ public class UserService {
      * Should typically be restricted to admin users in production.
      * 
      * @return a list of all users in the system
-     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
-     * @throws UserOperationException if server error occurs
+     * @throws UnauthorizedUserAccessException if authentication fails or user is
+     *                                         not an admin
+     * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.Get> getAllUsers() {
         try {
@@ -212,7 +213,7 @@ public class UserService {
             if (!isAdmin) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
-                    
+
             logger.debug("Searching for all users");
             List<UserDto.Get> users = userRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Found all users");
@@ -232,16 +233,17 @@ public class UserService {
      * 
      * @param role the role to filter users by
      * @return a list of users with the specified role
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if authentication fails or user is
+     *                                         not an admin
+     * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.Get> getAllUsersOfARole(Role role) {
         if (role == null) {
             throw new InvalidUserParameterException("Roll cannot be null");
         }
 
-        try { 
+        try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
@@ -257,9 +259,9 @@ public class UserService {
             }
 
             logger.debug("Searching for users with role: {}", role);
-            List<UserDto.Get> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList(); 
+            List<UserDto.Get> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList();
             logger.info("Found users with provided role");
-            return users; 
+            return users;
         } catch (UnauthorizedUserAccessException e) {
             logger.error("UnauthorizedUser: {}", e.getMessage());
             throw e;
@@ -309,14 +311,31 @@ public class UserService {
      * 
      * @param isVerified true to get verified users, false to get unverified users
      * @return a list of users with the specified verification status
-     * @throws UserOperationException if server error occurs
+     * @throws UnauthorizedUserAccessException if authentication fails or user is
+     *                                         not an admin
+     * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.Get> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
             logger.debug("Searching for users by verified status: {}", isVerified);
-            List<UserDto.Get> users = userRepository.findByIsVerified(isVerified).stream().map(this::convertToDto).toList();
+            List<UserDto.Get> users = userRepository.findByIsVerified(isVerified).stream().map(this::convertToDto)
+                    .toList();
             logger.info("Found all users with verified status: {}", isVerified);
-            return users; 
+            return users;
         } catch (Exception e) {
             logger.error("Failed to fetch all users with provided verified status {}: {}", isVerified, e.getMessage());
             throw new UserOperationException("Failed to fetch all users with provided verified status", e);
@@ -362,9 +381,10 @@ public class UserService {
      * @param date the cutoff date - users with last login before this date are
      *             considered inactive
      * @return a list of users who haven't logged in since the specified date
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UnauthorizedUserAccessException if authentication fails or user is not an admin
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if authentication fails or user is
+     *                                         not an admin
+     * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.Get> getInactiveUsersSince(LocalDateTime date) {
         if (date == null) {
@@ -387,13 +407,14 @@ public class UserService {
             }
 
             logger.debug("Searching for users that have not logged in since {}", date);
-            List<UserDto.Get> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto).toList();
+            List<UserDto.Get> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto)
+                    .toList();
             logger.info("Successfully fetched all users that have not logged in since {}", date);
             return users;
         } catch (UnauthorizedUserAccessException e) {
             logger.error("UnauthorizedUser: {}", e.getMessage());
             throw e;
-        } catch (Exception e) { 
+        } catch (Exception e) {
             logger.error("Failed to fetch users that have not logged in since {}: {}", date, e.getMessage());
             throw new UserOperationException("Failed to get users that have not logged in since " + date, e);
         }
