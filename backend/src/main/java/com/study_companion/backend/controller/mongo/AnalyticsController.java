@@ -3,6 +3,7 @@ package com.study_companion.backend.controller.mongo;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -36,11 +37,6 @@ public class AnalyticsController {
         this.analyticsService = analyticsService;
         this.deckService = deckService;
     }
-
-    // FIXME: POST 201 with return
-    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
-    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
-    // ResponseEntity.noContent().build()
 
     @GetMapping("/deck/{deckId}")
     public List<DeckAnalytics> getAnalyticsByDeckId(@PathVariable UUID deckId, Authentication authentication) {
@@ -103,7 +99,7 @@ public class AnalyticsController {
     }
 
     @PostMapping("/createNewReviewSession")
-    public ResponseEntity<String> createNewReviewSession(@RequestBody AnalyticsDto.CreateReview analyticsDto,
+    public ResponseEntity<ReviewSession> createNewReviewSession(@RequestBody AnalyticsDto.CreateReview analyticsDto,
             Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
 
@@ -111,10 +107,10 @@ public class AnalyticsController {
             throw new UnauthorizedAnalyticsAccessException("You can only create analytics for your own account");
         }
 
-        analyticsService.createReviewSession(analyticsDto.deckId(), analyticsDto.userId(), analyticsDto.deckName(),
+        ReviewSession newReviewSession = analyticsService.createReviewSession(analyticsDto.deckId(), analyticsDto.userId(), analyticsDto.deckName(),
                 analyticsDto.score(), analyticsDto.cardsReviewed(), analyticsDto.correctAnswers());
 
-        return ResponseEntity.ok("Successfully created new review session");
+        return ResponseEntity.status(HttpStatus.CREATED).body(newReviewSession);
     }
 
     @DeleteMapping("/delete/deck/{deckId}")
@@ -124,7 +120,7 @@ public class AnalyticsController {
         validateDeleteAccess(requestingUserId, deck.getUser().getId(), authentication);
 
         analyticsService.deleteByDeckId(deckId);
-        return ResponseEntity.ok("Successfully deleted review sessions and analytics associated with deckId");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/delete/user/{userId}")
@@ -133,7 +129,7 @@ public class AnalyticsController {
         validateDeleteAccess(requestingUserId, userId, authentication);
 
         analyticsService.deleteByUserId(userId);
-        return ResponseEntity.ok("Successfully deleted review sessions and analytics associated with userId");
+        return ResponseEntity.noContent().build();
     }
 
     private boolean isAdmin(Authentication authentication) {

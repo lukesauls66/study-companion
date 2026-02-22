@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -45,7 +46,7 @@ public class SessionCacheController {
         UUID currUserId = UUID.fromString(authentication.getName());
         Session session = sessionService.createSession(currUserId, null);
 
-        return ResponseEntity.ok(session);
+        return ResponseEntity.status(HttpStatus.CREATED).body(session);
     }
 
     @PostMapping("/cachedDecks/createCachedDecks")
@@ -54,7 +55,7 @@ public class SessionCacheController {
         UUID currUserId = UUID.fromString(authentication.getName());
         CachedDecks decks = sessionService.createOrUpdateCachedDecks(currUserId, deckCaches);
 
-        return ResponseEntity.ok(decks);
+        return ResponseEntity.status(HttpStatus.CREATED).body(decks);
     }
 
     @PutMapping("/refreshSession")
@@ -100,7 +101,7 @@ public class SessionCacheController {
         UUID currUserId = UUID.fromString(authentication.getName());
         sessionService.clearSessionAndCachedDecks(currUserId);
 
-        return ResponseEntity.ok("Successfully cleared user's session and cached decks");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/cachedDecks/invalidate")
@@ -108,6 +109,6 @@ public class SessionCacheController {
         UUID currUserId = UUID.fromString(authentication.getName());
         sessionService.invalidateCachedDecks(currUserId);
         
-        return ResponseEntity.ok("Successfully deleted user's cached decks");
+        return ResponseEntity.noContent().build();
     }
 }

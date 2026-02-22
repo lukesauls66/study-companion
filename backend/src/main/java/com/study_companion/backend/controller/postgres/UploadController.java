@@ -3,6 +3,7 @@ package com.study_companion.backend.controller.postgres;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -21,12 +22,11 @@ import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.service.UploadService;
 import org.springframework.web.bind.annotation.RequestParam;
 
-
 @RestController
 @RequestMapping(value = "/api/upload")
-@CrossOrigin 
+@CrossOrigin
 public class UploadController {
-    
+
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024;
 
     private final UploadService uploadService;
@@ -35,16 +35,11 @@ public class UploadController {
         this.uploadService = uploadService;
     }
 
-    // FIXME: POST 201 with return
-    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
-    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
-    // ResponseEntity.noContent().build()
-
     @GetMapping("/getAllUploads")
     public List<Upload> getAllUploads() {
         return uploadService.getAllUploads();
     }
-    
+
     @GetMapping("/{uploadId}")
     public Upload getUploadById(@PathVariable UUID uploadId) {
         return uploadService.getUploadById(uploadId);
@@ -64,68 +59,70 @@ public class UploadController {
     public List<Upload> getDeckUploads(@PathVariable UUID deckId) {
         return uploadService.getAllDeckUploads(deckId);
     }
-    
+
     @GetMapping("/deck/{deckId}/count")
     public long countDeckUploads(@PathVariable UUID deckId) {
         return uploadService.getCountOfAllDeckUploads(deckId);
     }
-    
+
     @PostMapping("/createUpload")
-    public ResponseEntity<String> createNewUpload(@RequestBody UploadDto.Create uploadDto, @RequestParam MultipartFile file,
-                                   Authentication authentication) {
+    public ResponseEntity<Upload> createNewUpload(@RequestBody UploadDto.Create uploadDto,
+            @RequestParam MultipartFile file,
+            Authentication authentication) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File cannot be empty");
+            throw new IllegalArgumentException("File cannot be empty");
         }
-        
+
         if (file.getSize() > MAX_FILE_SIZE) {
-            return ResponseEntity.badRequest().body("File too large");
+            throw new IllegalArgumentException("File too large");
         }
 
         UUID requestingUserId = UUID.fromString(authentication.getName());
 
         long fileSize = file.getSize();
 
-        uploadService.createUpload(uploadDto, fileSize, requestingUserId);
-        return ResponseEntity.ok("Successfully created new upload");
+        Upload newUpload = uploadService.createUpload(uploadDto, fileSize, requestingUserId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newUpload);
     }
 
     @PutMapping("/{uploadId}/start")
-    public ResponseEntity<String> startParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
+    public ResponseEntity<Upload> startParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
-        uploadService.startParsingUpload(uploadId, requestingUserId);
-        return ResponseEntity.ok("Successfully started parsing");
+        Upload updatedUpload = uploadService.startParsingUpload(uploadId, requestingUserId);
+        return ResponseEntity.ok(updatedUpload);
     }
 
     @PutMapping("/{uploadId}/complete")
-    public ResponseEntity<String> completeParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
+    public ResponseEntity<Upload> completeParsingUpload(@PathVariable UUID uploadId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
-        uploadService.completeParsingUpload(uploadId, requestingUserId); 
-        return ResponseEntity.ok("Successfully completed parsing");
+        Upload updatedUpload = uploadService.completeParsingUpload(uploadId, requestingUserId);
+        return ResponseEntity.ok(updatedUpload);
     }
 
     @PutMapping("/{uploadId}/failed")
-    public ResponseEntity<String> failParsingUpload(@PathVariable UUID uploadId, @RequestBody String errorMessage, Authentication authentication) {
-        UUID requestingUserId = UUID.fromString(authentication.getName()); 
-        uploadService.failParsingUpload(uploadId, errorMessage, requestingUserId);
-        return ResponseEntity.ok("Saved failed parsing job");
+    public ResponseEntity<Upload> failParsingUpload(@PathVariable UUID uploadId, @RequestBody String errorMessage,
+            Authentication authentication) {
+        UUID requestingUserId = UUID.fromString(authentication.getName());
+        Upload updatedUpload = uploadService.failParsingUpload(uploadId, errorMessage, requestingUserId);
+        return ResponseEntity.ok(updatedUpload);
     }
 
     @DeleteMapping("/delete/{uploadId}")
     public ResponseEntity<String> deleteUploadById(@PathVariable UUID uploadId, Authentication authentication) {
-        UUID requestingUserId = UUID.fromString(authentication.getName()); 
+        UUID requestingUserId = UUID.fromString(authentication.getName());
         uploadService.deleteUploadById(uploadId, requestingUserId);
-        return ResponseEntity.ok("Successfully deleted upload");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/delete/user/{userId}")
     public ResponseEntity<String> deleteAllUserUploads(@PathVariable UUID userId) {
         uploadService.deleteAllUserUploads(userId);
-        return ResponseEntity.ok("Successfully deleted all user uploads");
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/delete/deck/{deckId}")
     public ResponseEntity<String> deleteAllDeckUploads(@PathVariable UUID deckId) {
         uploadService.deleteAllDeckUploads(deckId);
-        return ResponseEntity.ok("Successfully deleted all deck uploads");
+        return ResponseEntity.noContent().build();
     }
 }
