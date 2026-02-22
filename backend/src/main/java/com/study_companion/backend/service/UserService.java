@@ -66,7 +66,7 @@ public class UserService {
             throw new InvalidUserCreationException("Username cannot be empty");
         }
 
-        if (userDto.password().trim().isEmpty()) {
+        if (userDto.rawPassword().trim().isEmpty()) {
             throw new InvalidUserCreationException("Password cannot be empty");
         }
 
@@ -78,7 +78,7 @@ public class UserService {
 
             logger.debug("Creating user");
             User user = new User(userDto.email().trim(), userDto.name().trim(), userDto.username().trim(),
-                    passwordEncoder.encode(userDto.password().trim()));
+                    passwordEncoder.encode(userDto.rawPassword().trim()));
 
             User savedUser = userRepository.save(user);
             logger.info("Successfully created user");
@@ -511,14 +511,14 @@ public class UserService {
 
             if (!passwordEncoder.matches(userDto.currPassword(), existingUser.getPassword())) {
                 throw new InvalidPasswordChangeException("Current password is incorrect");
-            } else if (passwordEncoder.matches(userDto.newPassword(), existingUser.getPassword())) {
+            } else if (passwordEncoder.matches(userDto.newRawPassword(), existingUser.getPassword())) {
                 throw new InvalidPasswordChangeException("Cannot change password to existing password");
-            } else if (!userDto.newPassword().equals(userDto.confirmNewPassword())) {
+            } else if (!userDto.newRawPassword().equals(userDto.confirmNewRawPassword())) {
                 throw new InvalidPasswordChangeException("New password doesn't match confirm password");
             }
 
             logger.debug("Updated user's password");
-            existingUser.setPassword(passwordEncoder.encode(userDto.newPassword().trim()));
+            existingUser.setPassword(passwordEncoder.encode(userDto.newRawPassword().trim()));
 
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user's password");
