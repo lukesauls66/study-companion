@@ -30,6 +30,11 @@ public class DeckController {
         this.deckService = deckService;
     }
 
+    // FIXME: POST 201 with return
+    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
+    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
+    // ResponseEntity.noContent().build()
+
     @GetMapping("/getAllDecks")
     public List<Deck> getAllDecks() {
         return deckService.getAllDecks();

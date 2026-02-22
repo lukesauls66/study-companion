@@ -37,6 +37,11 @@ public class AnalyticsController {
         this.deckService = deckService;
     }
 
+    // FIXME: POST 201 with return
+    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
+    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
+    // ResponseEntity.noContent().build()
+
     @GetMapping("/deck/{deckId}")
     public List<DeckAnalytics> getAnalyticsByDeckId(@PathVariable UUID deckId, Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
@@ -55,7 +60,8 @@ public class AnalyticsController {
     }
 
     @GetMapping("/user/descendingOrder/{userId}")
-    public List<DeckAnalytics> getAnalyticsByUserIdDescendingOrder(@PathVariable UUID userId, Authentication authentication) {
+    public List<DeckAnalytics> getAnalyticsByUserIdDescendingOrder(@PathVariable UUID userId,
+            Authentication authentication) {
         UUID requestingUserId = UUID.fromString(authentication.getName());
         validateAccess(requestingUserId, userId, authentication);
 

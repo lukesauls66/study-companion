@@ -339,7 +339,7 @@ public class SessionCacheService {
      * @throws InvalidSessionParameterException if userId is null
      * @throws SessionOperationException if Redis operation fails
      */
-    public void logout(UUID userId) {
+    public void clearSessionAndCachedDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when logging out");
         }
@@ -364,7 +364,7 @@ public class SessionCacheService {
      * @throws InvalidSessionParameterException if userId is null
      * @throws SessionOperationException if Redis operation fails
      */
-    public boolean validateSessionAndCleanupCache(UUID userId) {
+    private boolean validateSessionAndCleanupCache(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when validating session");
         }

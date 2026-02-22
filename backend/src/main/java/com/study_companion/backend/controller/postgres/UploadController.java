@@ -35,6 +35,11 @@ public class UploadController {
         this.uploadService = uploadService;
     }
 
+    // FIXME: POST 201 with return
+    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
+    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
+    // ResponseEntity.noContent().build()
+
     @GetMapping("/getAllUploads")
     public List<Upload> getAllUploads() {
         return uploadService.getAllUploads();

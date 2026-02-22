@@ -30,6 +30,11 @@ public class UserController {
     UserController(UserService userService) {
         this.userService = userService; 
     }
+
+    // FIXME: POST 201 with return
+    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
+    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
+    // ResponseEntity.noContent().build()
  
     @GetMapping("/getUsers")
     public List<UserDto.Get> getUsers() {

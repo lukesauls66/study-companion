@@ -32,6 +32,11 @@ public class CardController {
         this.cardService = cardService;
     }
 
+    // FIXME: POST 201 with return
+    // ResponseEntity.status(HttpStatus.CREATED).body(createdUser), PUT 200 with
+    // return ResponseEntity.ok(updatedDeck), DELETE 204 with return
+    // ResponseEntity.noContent().build()
+
     @GetMapping("/getCards")
     public List<Card> getAllCards() {
         return cardService.getAllCards();
