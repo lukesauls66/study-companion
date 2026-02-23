@@ -41,7 +41,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void createDeck_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -65,7 +65,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void createDeck_BlankTitle_ThrowsInvalidDeckCreationException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -80,7 +80,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void createDeck_BlankDescription_ThrowsInvalidDeckCreationException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -95,7 +95,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void getDeckById_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -131,7 +131,7 @@ public class DeckServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllDecks_ValidInput_ReturnsDecks() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -160,8 +160,8 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void getAllUserDecks_ValidInput_ReturnsDecks() {
-        UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
-        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
+        UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password123");
 
         UserDto.Get user1 = userService.createUser(userCreateDto1);
         UserDto.Get user2 = userService.createUser(userCreateDto2);
@@ -192,8 +192,8 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void getCountOfAllUserDecks_ValidInput_ReturnsNumOfDecks() {
-        UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
-        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
+        UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password123");
 
         UserDto.Get user1 = userService.createUser(userCreateDto1);
         UserDto.Get user2 = userService.createUser(userCreateDto2);
@@ -222,7 +222,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -242,7 +242,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_InvalidInput_ThrowsInvalidDeckUpdateException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -261,7 +261,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_NullDeckId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -276,7 +276,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -293,7 +293,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -313,7 +313,7 @@ public class DeckServiceIntegrationTest {
     @Test
     void updateDeck_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -332,7 +332,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void deleteDeckById_ValidInput() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -355,7 +355,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void deleteDeckById_NullDeckId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -368,7 +368,7 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void deleteDeckById_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -386,7 +386,7 @@ public class DeckServiceIntegrationTest {
     @Test
     void deleteDeckById_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -404,7 +404,7 @@ public class DeckServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllUserDecks_ValidInput() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 
@@ -440,7 +440,7 @@ public class DeckServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "USER")
     void deleteAllUserDecks_NonAdmin_ThrowsUnauthorizedDeckAccessException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(userCreateDto);
 

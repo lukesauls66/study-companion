@@ -33,7 +33,7 @@ public class UserServiceIntegrationTest {
  
     @Test
     void createUser_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -53,7 +53,7 @@ public class UserServiceIntegrationTest {
  
     @Test
     void createUser_BlankEmail_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create(" ", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest(" ", "John Smith", "john123", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -64,7 +64,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankName_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", " ", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", " ", "john123", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -75,7 +75,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankUsername_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", " ", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", " ", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -86,7 +86,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankPassword_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", " ");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", " ");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -97,8 +97,8 @@ public class UserServiceIntegrationTest {
     
     @Test
     void createUser_DuplicateEmail_ThrowsUserAlreadyExistsException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test@email.com", "Jane Smith", "jane123", "password2");
 
         userService.createUser(createDto1);
 
@@ -111,7 +111,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getUserById_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get createdUser = userService.createUser(createDto);
         UserDto.Get user = userService.getUserById(createdUser.id());
@@ -143,7 +143,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getUserByEmail_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get createdUser = userService.createUser(createDto);
         UserDto.Get user = userService.getUserByEmail(createdUser.email());
@@ -175,7 +175,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getUserByUsername_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get createdUser = userService.createUser(createDto);
         UserDto.Get user = userService.getUserByUsername(createdUser.username());
@@ -208,8 +208,8 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsers_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -238,8 +238,8 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsersOfARole_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -264,8 +264,8 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "USER")
     void getAllUsersOfARole_NonAdmin_ThrowsUnauthorizedUserAccessException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -279,7 +279,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void verifyUser_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
     
         UserDto.Get user1 = userService.createUser(createDto);
 
@@ -299,9 +299,9 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getAllUsersOfVerifiedStatus_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
-        UserDto.Create createDto3 = new UserDto.Create("test3@email.com", "Jacob Smith", "jacob123", "password3");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto3 = new UserDto.CreateRequest("test3@email.com", "Jacob Smith", "jacob123", "password3");
 
         UserDto.Get user1 = userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -320,8 +320,8 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsersInactiveSinceDate_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         UserDto.Get user1 = userService.createUser(createDto1);
         UserDto.Get user2 = userService.createUser(createDto2);
@@ -353,8 +353,8 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "USER")
     void getAllUsersInactiveSinceDate_NonAdmin_ThrowsUnauthorizedUserAccessException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         UserDto.Get user1 = userService.createUser(createDto1);
         UserDto.Get user2 = userService.createUser(createDto2);
@@ -377,7 +377,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserEmail_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -393,8 +393,8 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserEmail_InvalidInput_ThrowsException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         UserDto.Get user = userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -417,7 +417,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserNameAndUserName_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -433,7 +433,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUser_InvalidInput_ThrowsInvalidUserUpdate() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -448,7 +448,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUser_NullUserId_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
 
         userService.createUser(createDto);
 
@@ -463,7 +463,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUser_NullUserDto_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password1");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -476,7 +476,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -498,7 +498,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_NullUserDto_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -511,7 +511,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_WrongCurrentPassword_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -526,7 +526,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_SamePassword_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -541,7 +541,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_PasswordMismatch_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
 
@@ -570,7 +570,7 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteUser_ValidInput() { 
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.Get user = userService.createUser(createDto);
         List<UserDto.Get> users = userService.getAllUsers();

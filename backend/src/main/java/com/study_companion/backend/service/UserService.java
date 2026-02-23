@@ -49,7 +49,7 @@ public class UserService {
      * @throws UserAlreadyExistsException    if a user with the email already exists
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get createUser(UserDto.Create userDto) {
+    public UserDto.Get createUser(UserDto.CreateRequest userDto) {
         if (userDto == null) {
             throw new InvalidUserParameterException("User data cannot be null when creating a user");
         }
