@@ -12,14 +12,12 @@ public class AuthDto {
 
         @Schema(description = "Response returned after a login attempt")
         public record LoginResponse(
-                        @Schema(description = "Result message", example = "Login successful") String message,
-                        @Schema(description = "Error flag", example = "false") boolean error) {
+                        @Schema(description = "Result message", example = "Login successful") String message) {
         }
 
         @Schema(description = "Response returned after a registration attempt")
         public record RegisterResponse(
-                        @Schema(description = "Result message", example = "User registered successfully") String message,
-                        @Schema(description = "Error flag", example = "false") boolean error) {
+                        @Schema(description = "Result message", example = "User registered successfully") String message) {
         }
 
         @Schema(description = "Response returned after a successful logout")

@@ -18,6 +18,8 @@
 // import org.springframework.web.bind.annotation.RequestParam;
 // import org.springframework.web.bind.annotation.RestController;
 
+// import com.study_companion.backend.dto.AuthDto;
+// import com.study_companion.backend.dto.GenericDto;
 // import com.study_companion.backend.dto.UserDto;
 // import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 // import com.study_companion.backend.model.Role;
@@ -26,6 +28,9 @@
 
 // import io.swagger.v3.oas.annotations.Operation;
 // import io.swagger.v3.oas.annotations.Parameter;
+// import io.swagger.v3.oas.annotations.media.Content;
+// import io.swagger.v3.oas.annotations.media.ExampleObject;
+// import io.swagger.v3.oas.annotations.media.Schema;
 // import io.swagger.v3.oas.annotations.responses.ApiResponse;
 // import io.swagger.v3.oas.annotations.responses.ApiResponses;
 // import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,25 +53,25 @@
 //     @GetMapping("/getUsers")
 //     @Operation(summary = "Get all users", description = "Retrieve all users in the system. Requires admin privileges.")
 //     @ApiResponses(value = {
-//             @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
-//             @ApiResponse(responseCode = "401", description = "User not authenticated"),
-//             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required")
+//             @ApiResponse(responseCode = "200", description = "Users retrieved successfully", content = @Content(schema = @Schema(implementation = UserDto.GetResponse.class))),
+//             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }")))
 //     })
-//     public List<UserDto.Get> getUsers() {
-//         return userService.getAllUsers();
+//     public ResponseEntity<List<UserDto.GetResponse>> getUsers() {
+//         List<UserDto.GetResponse> users = userService.getAllUsers();
+//         return ResponseEntity.ok(users);
 //     }
 
 //     @GetMapping("/getUsersOfRole")
 //     @Operation(summary = "Get users by role", description = "Retrieve all users with a specific role. Requires admin privileges.")
 //     @ApiResponses(value = {
-//             @ApiResponse(responseCode = "200", description = "Users retrieved successfully"),
-//             @ApiResponse(responseCode = "400", description = "Invalid role parameter"),
-//             @ApiResponse(responseCode = "401", description = "User not authenticated"),
-//             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required")
+//             @ApiResponse(responseCode = "200", description = "Users retrieved successfully", content = @Content(schema = @Schema(implementation = UserDto.GetResponse.class))),
+//             @ApiResponse(responseCode = "400", description = "Invalid role parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+//             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }")))
 //     })
-//     public List<UserDto.Get> getUsersOfARole(
+//     public ResponseEntity<List<UserDto.GetResponse>> getUsersOfARole(
 //             @Parameter(description = "Role to filter users by (USER, ADMIN)") @RequestParam Role role) {
-//         return userService.getAllUsersOfARole(role);
+//         List<UserDto.GetResponse> users = userService.getAllUsersOfARole(role);
+//         return ResponseEntity.ok(users);
 //     }
 
 //     @GetMapping("/getUsersOfVerification")
@@ -77,7 +82,7 @@
 //             @ApiResponse(responseCode = "401", description = "User not authenticated"),
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required")
 //     })
-//     public List<UserDto.Get> getUsersOfVerification(
+//     public List<UserDto.GetResponse> getUsersOfVerification(
 //             @Parameter(description = "Verification status to filter by (true for verified, false for unverified)") @RequestParam boolean isVerified) {
 //         return userService.getAllVerifiedOrUnverifiedUsers(isVerified);
 //     }
@@ -90,7 +95,7 @@
 //             @ApiResponse(responseCode = "401", description = "User not authenticated"),
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required")
 //     })
-//     public List<UserDto.Get> getUsersInactiveSince(
+//     public List<UserDto.GetResponse> getUsersInactiveSince(
 //             @Parameter(description = "Date to check for user inactivity (ISO format)") @RequestParam LocalDateTime date) {
 //         return userService.getInactiveUsersSince(date);
 //     }
@@ -104,7 +109,7 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public UserDto.Get getUserById(
+//     public UserDto.GetResponse getUserById(
 //             @Parameter(description = "UUID of the user to retrieve") @PathVariable UUID userId,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.isAdmin(authentication)) {
@@ -119,7 +124,7 @@
 //             @ApiResponse(responseCode = "200", description = "Current user retrieved successfully"),
 //             @ApiResponse(responseCode = "401", description = "User not authenticated")
 //     })
-//     public UserDto.Get getCurrentUser(
+//     public UserDto.GetResponse getCurrentUser(
 //             @Parameter(hidden = true) Authentication authentication) {
 //         UUID currentUserId = UUID.fromString(authentication.getName());
 //         return userService.getUserById(currentUserId);
@@ -134,7 +139,7 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public UserDto.Get getUserByEmail(
+//     public UserDto.GetResponse getUserByEmail(
 //             @Parameter(description = "Email address of the user to retrieve") @PathVariable String email,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.isAdmin(authentication)) {
@@ -152,7 +157,7 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public UserDto.Get getUserByUsername(
+//     public UserDto.GetResponse getUserByUsername(
 //             @Parameter(description = "Username of the user to retrieve") @PathVariable String username,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.isAdmin(authentication)) {
@@ -168,9 +173,9 @@
 //             @ApiResponse(responseCode = "400", description = "Invalid input data"),
 //             @ApiResponse(responseCode = "409", description = "User already exists")
 //     })
-//     public ResponseEntity<UserDto.Get> createNewUser(
+//     public ResponseEntity<UserDto.GetResponse> createNewUser(
 //             @Parameter(description = "User creation data containing email, name, username, and password") @RequestBody UserDto.CreateRequest userDto) {
-//         UserDto.Get newUser = userService.createUser(userDto);
+//         UserDto.GetResponse newUser = userService.createUser(userDto);
 //         return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
 //     }
 
@@ -183,13 +188,13 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public ResponseEntity<UserDto.Get> verifyUser(
+//     public ResponseEntity<UserDto.GetResponse> verifyUser(
 //             @Parameter(description = "UUID of the user to verify") @PathVariable UUID userId,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.isAdmin(authentication)) {
 //             throw new UnauthorizedUserAccessException("Unauthorized user access");
 //         }
-//         UserDto.Get user = userService.verifyUser(userId);
+//         UserDto.GetResponse user = userService.verifyUser(userId);
 //         return ResponseEntity.ok(user);
 //     }
 
@@ -202,14 +207,14 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public ResponseEntity<UserDto.Get> updateUser(
+//     public ResponseEntity<UserDto.GetResponse> updateUser(
 //             @Parameter(description = "UUID of the user to update") @PathVariable UUID userId,
 //             @Parameter(description = "User update data containing optional email, name, and username") @RequestBody UserDto.Update userDto,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.canAccess(authentication, userId)) {
 //             throw new UnauthorizedUserAccessException("Unauthorized user access");
 //         }
-//         UserDto.Get updatedUser = userService.updateUser(userId, userDto);
+//         UserDto.GetResponse updatedUser = userService.updateUser(userId, userDto);
 //         return ResponseEntity.ok(updatedUser);
 //     }
 
@@ -241,14 +246,14 @@
 //             @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
 //             @ApiResponse(responseCode = "404", description = "User not found")
 //     })
-//     public ResponseEntity<UserDto.Get> updateUserPassword(
+//     public ResponseEntity<UserDto.GetResponse> updateUserPassword(
 //             @Parameter(description = "UUID of the user to update password for") @PathVariable UUID userId,
 //             @Parameter(description = "Password change data containing current password, new password, and confirmation") @RequestBody UserDto.ChangePassword userDto,
 //             @Parameter(hidden = true) Authentication authentication) {
 //         if (!securityUtils.canAccess(authentication, userId)) {
 //             throw new UnauthorizedUserAccessException("Unauthorized user access");
 //         }
-//         UserDto.Get updatedUser = userService.updateUserPassword(userId, userDto);
+//         UserDto.GetResponse updatedUser = userService.updateUserPassword(userId, userDto);
 //         return ResponseEntity.ok(updatedUser);
 //     }
 

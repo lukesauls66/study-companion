@@ -50,7 +50,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -87,7 +87,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_InvalidInput_ThrowsInvalidUploadCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -106,7 +106,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_NullUploadDto_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
         Long fileSize = 1024L;
 
         InvalidUploadParameterException exception = assertThrows(InvalidUploadParameterException.class, () -> {
@@ -119,7 +119,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -152,7 +152,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_NonExistentUser_ThrowsUserNotFoundException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -171,7 +171,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_NonExistentDeck_ThrowsDeckNotFoundException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         UUID nonExistentDeckId = UUID.randomUUID();
         UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), nonExistentDeckId, "test-file.PDF",
@@ -187,10 +187,10 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user2.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -209,7 +209,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_InvalidRequestingUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -229,7 +229,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_EmptyFileName_ThrowsInvalidUploadCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -248,7 +248,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_EmptyFileUrl_ThrowsInvalidUploadCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -267,7 +267,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void createUpload_EmptyFileSize_ThrowsInvalidUploadCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -285,7 +285,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void getUploadById_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -326,10 +326,10 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void getAllUploads_ValidInput_ReturnsUploads() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test1@email.com", "John Smith", "john123", "password");
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Doe", "jane123", "password2");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "User1 Deck", "Testing");
         Deck deck1 = deckService.createDeck(deckCreateDto1);
@@ -360,7 +360,7 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "USER")
     void getAllUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -388,7 +388,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void getAllUserUploads_ValidInput_ReturnsUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -419,7 +419,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void getAllDeckUploads_ValidInput_ReturnsUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -450,7 +450,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void getCountOfAllUserUploads_ValidInput_ReturnsCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -480,7 +480,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void getCountOfAllDeckUploads_ValidInput_ReturnsCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -501,7 +501,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void startParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -529,7 +529,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void startParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -548,10 +548,10 @@ public class UploadServiceIntegrationTest {
     @Test
     void startParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test1@email.com", "John Smith", "john123", "password");
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Doe", "jane123", "password");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -570,7 +570,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void completeParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -600,7 +600,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void completeParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -619,10 +619,10 @@ public class UploadServiceIntegrationTest {
     @Test
     void completeParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Doe", "jane123", "password");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -643,7 +643,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void failParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -675,7 +675,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void failParsingUpload_NullErrorMessage_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -694,7 +694,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void failParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -713,10 +713,10 @@ public class UploadServiceIntegrationTest {
     @Test
     void failParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Doe", "jane123", "password");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -748,7 +748,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void deleteUploadById_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -767,10 +767,10 @@ public class UploadServiceIntegrationTest {
     @Test
     void deleteUploadById_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test1@email.com", "John Smith", "john123", "password");
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
 
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Doe", "jane123", "password");
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -789,7 +789,7 @@ public class UploadServiceIntegrationTest {
     @Test
     void deleteUploadById_ValidInput_DeletesUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -847,7 +847,7 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void deleteAllUserUploads_ValidInput_DeletesAllUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -878,7 +878,7 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "USER")
     void deleteAllUserUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -926,7 +926,7 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void deleteAllDeckUploads_ValidInput_DeletesAllUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -957,7 +957,7 @@ public class UploadServiceIntegrationTest {
     @WithMockUser(roles = "USER")
     void deleteAllDeckUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);

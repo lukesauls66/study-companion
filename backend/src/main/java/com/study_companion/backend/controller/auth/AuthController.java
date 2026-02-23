@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.study_companion.backend.dto.AuthDto;
+import com.study_companion.backend.dto.GenericDto;
 import com.study_companion.backend.dto.UserDto;
 import com.study_companion.backend.service.UserService;
 
@@ -48,52 +49,40 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Login user with username and password")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User logged in"),
-            @ApiResponse(responseCode = "400", description = "Invalid input or user not found", content = @Content(schema = @Schema(implementation = AuthDto.RegisterResponse.class), examples = {
-                    @ExampleObject(name = "Invalid input", value = "{ \"message\": \"Invalid input\", \"error\": true }"),
-                    @ExampleObject(name = "User not found", value = "{ \"message\": \"User not found\", \"error\": true }")
-            }))
+            @ApiResponse(responseCode = "200", description = "User logged in", content = @Content(schema = @Schema(implementation = AuthDto.LoginResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(name = "Invalid credentials", value = "{ \"message\": \"Invalid credentials\", \"error\": true }")))
     })
     public ResponseEntity<AuthDto.LoginResponse> login(
             @Parameter(description = "Login request containing user username and password") @Valid @RequestBody AuthDto.LoginRequest request,
             @Parameter(hidden = true) HttpServletRequest httpRequest) {
-        try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            request.username(),
-                            request.password()));
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.username(),
+                        request.password()));
 
-            SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
-            securityContext.setAuthentication(authentication);
-            SecurityContextHolder.setContext(securityContext);
+        SecurityContext securityContext = SecurityContextHolder.createEmptyContext();
+        securityContext.setAuthentication(authentication);
+        SecurityContextHolder.setContext(securityContext);
 
-            HttpSession session = httpRequest.getSession(true);
-            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
+        HttpSession session = httpRequest.getSession(true);
+        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, securityContext);
 
-            return ResponseEntity.ok(new AuthDto.LoginResponse("Login successful", false));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(new AuthDto.LoginResponse("Invalid credentials: " + e.getMessage(), true));
-        }
+        return ResponseEntity.ok(new AuthDto.LoginResponse("Login successful"));
     }
 
     @PostMapping("/register")
     @Operation(summary = "Register new user", description = "Create a new user account with name, email, username, and password")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "User registered successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = AuthDto.RegisterResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid input\", \"error\": true }"))),
-            @ApiResponse(responseCode = "409", description = "User already exists", content = @Content(schema = @Schema(implementation = AuthDto.RegisterResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User already exists\", \"error\": true }")))
+            @ApiResponse(responseCode = "201", description = "User registered successfully", content = @Content(schema = @Schema(implementation = AuthDto.RegisterResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid input\", \"error\": true }"))),
+            @ApiResponse(responseCode = "409", description = "User already exists", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User already exists\", \"error\": true }")))
     })
     public ResponseEntity<AuthDto.RegisterResponse> register(
             @Parameter(description = "Register request containing user name, email, username, and password") @Valid @RequestBody UserDto.CreateRequest request) {
-        try {
-            userService.createUser(request);
-            return ResponseEntity.status(HttpStatus.CREATED)
-                    .body(new AuthDto.RegisterResponse("User registered successfully", false));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new AuthDto.RegisterResponse("Registration failed: " +
-                    e.getMessage(), true));
-        }
+
+        userService.createUser(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new AuthDto.RegisterResponse("User registered successfully"));
     }
 
     @PostMapping("/logout")

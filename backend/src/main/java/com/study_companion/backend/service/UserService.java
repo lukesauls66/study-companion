@@ -49,7 +49,7 @@ public class UserService {
      * @throws UserAlreadyExistsException    if a user with the email already exists
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get createUser(UserDto.CreateRequest userDto) {
+    public UserDto.GetResponse createUser(UserDto.CreateRequest userDto) {
         if (userDto == null) {
             throw new InvalidUserParameterException("User data cannot be null when creating a user");
         }
@@ -101,7 +101,7 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given ID
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get getUserById(UUID id) {
+    public UserDto.GetResponse getUserById(UUID id) {
         if (id == null) {
             throw new InvalidUserParameterException("ID cannot be null");
         }
@@ -133,7 +133,7 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given email
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get getUserByEmail(String email) {
+    public UserDto.GetResponse getUserByEmail(String email) {
         if (email == null) {
             throw new InvalidUserParameterException("Email cannot be null");
         }
@@ -166,7 +166,7 @@ public class UserService {
      *                                       username
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get getUserByUsername(String username) {
+    public UserDto.GetResponse getUserByUsername(String username) {
         if (username == null) {
             throw new InvalidUserParameterException("Username cannot be null");
         }
@@ -198,7 +198,7 @@ public class UserService {
      *                                         not an admin
      * @throws UserOperationException          if server error occurs
      */
-    public List<UserDto.Get> getAllUsers() {
+    public List<UserDto.GetResponse> getAllUsers() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -215,7 +215,7 @@ public class UserService {
             }
 
             logger.debug("Searching for all users");
-            List<UserDto.Get> users = userRepository.findAll().stream().map(this::convertToDto).toList();
+            List<UserDto.GetResponse> users = userRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Found all users");
             return users;
         } catch (UnauthorizedUserAccessException e) {
@@ -238,7 +238,7 @@ public class UserService {
      *                                         not an admin
      * @throws UserOperationException          if server error occurs
      */
-    public List<UserDto.Get> getAllUsersOfARole(Role role) {
+    public List<UserDto.GetResponse> getAllUsersOfARole(Role role) {
         if (role == null) {
             throw new InvalidUserParameterException("Roll cannot be null");
         }
@@ -259,7 +259,7 @@ public class UserService {
             }
 
             logger.debug("Searching for users with role: {}", role);
-            List<UserDto.Get> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList();
+            List<UserDto.GetResponse> users = userRepository.findByRole(role).stream().map(this::convertToDto).toList();
             logger.info("Found users with provided role");
             return users;
         } catch (UnauthorizedUserAccessException e) {
@@ -281,7 +281,7 @@ public class UserService {
      * @throws UserNotFoundException         if no user exists with the given ID
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get verifyUser(UUID userId) {
+    public UserDto.GetResponse verifyUser(UUID userId) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -315,7 +315,7 @@ public class UserService {
      *                                         not an admin
      * @throws UserOperationException          if server error occurs
      */
-    public List<UserDto.Get> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
+    public List<UserDto.GetResponse> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -332,7 +332,7 @@ public class UserService {
             }
 
             logger.debug("Searching for users by verified status: {}", isVerified);
-            List<UserDto.Get> users = userRepository.findByIsVerified(isVerified).stream().map(this::convertToDto)
+            List<UserDto.GetResponse> users = userRepository.findByIsVerified(isVerified).stream().map(this::convertToDto)
                     .toList();
             logger.info("Found all users with verified status: {}", isVerified);
             return users;
@@ -386,7 +386,7 @@ public class UserService {
      *                                         not an admin
      * @throws UserOperationException          if server error occurs
      */
-    public List<UserDto.Get> getInactiveUsersSince(LocalDateTime date) {
+    public List<UserDto.GetResponse> getInactiveUsersSince(LocalDateTime date) {
         if (date == null) {
             throw new InvalidUserParameterException("Date cannot be null");
         }
@@ -407,7 +407,7 @@ public class UserService {
             }
 
             logger.debug("Searching for users that have not logged in since {}", date);
-            List<UserDto.Get> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto)
+            List<UserDto.GetResponse> users = userRepository.findByLastLoginBefore(date).stream().map(this::convertToDto)
                     .toList();
             logger.info("Successfully fetched all users that have not logged in since {}", date);
             return users;
@@ -436,7 +436,7 @@ public class UserService {
      *                                       user
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.Get updateUser(UUID userId, UserDto.Update userDto) {
+    public UserDto.GetResponse updateUser(UUID userId, UserDto.Update userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -515,7 +515,7 @@ public class UserService {
      *                                        don't match
      * @throws UserOperationException         if server error occurs
      */
-    public UserDto.Get updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
+    public UserDto.GetResponse updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -583,8 +583,8 @@ public class UserService {
         }
     }
 
-    private UserDto.Get convertToDto(User user) {
-        return new UserDto.Get(
+    private UserDto.GetResponse convertToDto(User user) {
+        return new UserDto.GetResponse(
                 user.getId(),
                 user.getEmail(),
                 user.getName(),

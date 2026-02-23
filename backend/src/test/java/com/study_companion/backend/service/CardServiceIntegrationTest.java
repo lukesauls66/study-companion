@@ -44,7 +44,7 @@ public class CardServiceIntegrationTest {
     void createCard_ValidInput_ReturnsCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -72,7 +72,7 @@ public class CardServiceIntegrationTest {
     void createCard_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -93,7 +93,7 @@ public class CardServiceIntegrationTest {
     void createCard_BlankQuestion_ThrowsInvalidCardCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -112,7 +112,7 @@ public class CardServiceIntegrationTest {
     void createCard_BlankAnswer_ThrowsInvalidCardCreationException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -131,7 +131,7 @@ public class CardServiceIntegrationTest {
     void createCard_NullCardDto_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
             cardService.createCard(null, CardCreationType.MANUAL_UPLOAD, user.id());
@@ -144,7 +144,7 @@ public class CardServiceIntegrationTest {
     void createCard_NullCreationType_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -163,7 +163,7 @@ public class CardServiceIntegrationTest {
     void createCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -182,7 +182,7 @@ public class CardServiceIntegrationTest {
     void getCardById_ValidInput_ReturnsCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -203,7 +203,7 @@ public class CardServiceIntegrationTest {
     void getCardById_NullId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -237,8 +237,8 @@ public class CardServiceIntegrationTest {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
         DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
@@ -273,8 +273,8 @@ public class CardServiceIntegrationTest {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
         DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
         DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
@@ -302,7 +302,7 @@ public class CardServiceIntegrationTest {
     void getAllDeckCards_ValidInput_ReturnsCards() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -333,7 +333,7 @@ public class CardServiceIntegrationTest {
     void getAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -359,7 +359,7 @@ public class CardServiceIntegrationTest {
     void getCountOfAllDeckCards_ValidInput_ReturnsCardCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -383,7 +383,7 @@ public class CardServiceIntegrationTest {
     void getCountOfAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -409,7 +409,7 @@ public class CardServiceIntegrationTest {
     void updateCard_ValidInput_ReturnsUpdatedCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -435,7 +435,7 @@ public class CardServiceIntegrationTest {
     void updateCard_NullCardId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -458,7 +458,7 @@ public class CardServiceIntegrationTest {
     void updateCard_NullCardDto_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -479,7 +479,7 @@ public class CardServiceIntegrationTest {
     void updateCard_NullRequestingUserId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -502,7 +502,7 @@ public class CardServiceIntegrationTest {
     void updateCard_InvalidInput_ThrowsInvalidCardUpdateException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -525,7 +525,7 @@ public class CardServiceIntegrationTest {
     void updateCard_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -550,7 +550,7 @@ public class CardServiceIntegrationTest {
     void deleteCardById_ValidInput() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -573,7 +573,7 @@ public class CardServiceIntegrationTest {
     void deleteCardById_NullCardId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -594,7 +594,7 @@ public class CardServiceIntegrationTest {
     void deleteCardById_NullRequestingUserId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -615,7 +615,7 @@ public class CardServiceIntegrationTest {
     void deleteCardById_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -639,7 +639,7 @@ public class CardServiceIntegrationTest {
     void deleteAllDeckCards_ValidInput() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -668,7 +668,7 @@ public class CardServiceIntegrationTest {
     void deleteAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
@@ -695,7 +695,7 @@ public class CardServiceIntegrationTest {
     void deleteAllDeckCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
