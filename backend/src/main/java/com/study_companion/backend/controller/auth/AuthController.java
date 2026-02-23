@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -36,8 +37,8 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final UserService userService;
 
-    public AuthController(AuthenticationManager authenticationManager, UserService userService) {
-        this.authenticationManager = authenticationManager;
+    public AuthController(AuthenticationConfiguration configuration, UserService userService) throws Exception {
+        this.authenticationManager = configuration.getAuthenticationManager();
         this.userService = userService;
     }
 
@@ -82,15 +83,16 @@ public class AuthController {
             userService.createUser(request);
             return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body("Registration failed: " +
+                    e.getMessage());
         }
     }
 
     @PostMapping("/logout")
     @Operation(summary = "Logout user", description = "Logout user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User logged out"),
+    @ApiResponses(value = { @ApiResponse(responseCode = "200", description = "User logged out"),
             @ApiResponse(responseCode = "400", description = "Invalid input or user not logged in")
+
     })
     public ResponseEntity<String> logout(@Parameter(hidden = true) HttpServletRequest request) {
         HttpSession session = request.getSession(false);

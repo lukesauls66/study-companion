@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
     info = @Info(
         title = "Study Companion API",
         version = "1.0.0",
-        description = "REST API for Study Companion - flashcard management application with multi-database architecture (PostgreSQL, MongoDB, Redis)"
+        description = "REST API for Study Companion"
     ),
     servers = {
         @Server(url = "http://localhost:8080", description = "Development server"),
@@ -18,7 +18,6 @@ import org.springframework.context.annotation.Configuration;
     }
 )
 public class OpenApiConfig {
-    // SpringDoc will automatically configure Swagger UI and OpenAPI documentation
-    // Access Swagger UI at: http://localhost:8080/swagger-ui.html
+    // Access Swagger UI at: http://localhost:8080/swagger-ui/index.html
     // Access OpenAPI JSON at: http://localhost:8080/v3/api-docs
 }
