@@ -53,7 +53,7 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Invalid credentials", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(name = "Invalid credentials", value = "{ \"message\": \"Invalid credentials\", \"error\": true }")))
     })
     public ResponseEntity<AuthDto.LoginResponse> login(
-            @Parameter(description = "Login request containing user username and password") @Valid @RequestBody AuthDto.LoginRequest request,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Login request containing user username and password", required = true, content = @Content(schema = @Schema(implementation = AuthDto.LoginRequest.class))) @Valid @RequestBody AuthDto.LoginRequest request,
             @Parameter(hidden = true) HttpServletRequest httpRequest) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -71,14 +71,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Register new user", description = "Create a new user account with name, email, username, and password")
+    @Operation(summary = "Register new user", description = "Create a new user account")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User registered successfully", content = @Content(schema = @Schema(implementation = AuthDto.RegisterResponse.class))),
             @ApiResponse(responseCode = "400", description = "Invalid input", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid input\", \"error\": true }"))),
             @ApiResponse(responseCode = "409", description = "User already exists", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User already exists\", \"error\": true }")))
     })
     public ResponseEntity<AuthDto.RegisterResponse> register(
-            @Parameter(description = "Register request containing user name, email, username, and password") @Valid @RequestBody UserDto.CreateRequest request) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Register request containing user name, email, username, and password", required = true, content = @Content(schema = @Schema(implementation = UserDto.CreateRequest.class))) @Valid @RequestBody UserDto.CreateRequest request) {
 
         userService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED)
