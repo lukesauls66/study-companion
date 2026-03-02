@@ -124,7 +124,7 @@ public class UserService {
             User foundUser = userRepository.findById(id).get();
             logger.info("User found with provided id");
 
-            if (!isAdmin || id != UUID.fromString(authentication.getName())) {
+            if (!isAdmin && !id.equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized");
             }
 
@@ -327,6 +327,16 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            if (!userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Invalid Authentication");
+            }
+
             logger.debug("Searching for user with provided id");
             User existingUser = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
@@ -398,6 +408,19 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Searching for user with provided id");
             User existingUser = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
@@ -478,7 +501,7 @@ public class UserService {
      *                                       user
      * @throws UserOperationException        if server error occurs
      */
-    public UserDto.GetResponse updateUser(UUID userId, UserDto.Update userDto) {
+    public UserDto.GetResponse updateUser(UUID userId, UserDto.UpdateRequest userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -496,6 +519,19 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Searching for user by provided id");
             User existingUser = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
@@ -557,7 +593,7 @@ public class UserService {
      *                                        don't match
      * @throws UserOperationException         if server error occurs
      */
-    public UserDto.GetResponse updateUserPassword(UUID userId, UserDto.ChangePassword userDto) {
+    public UserDto.GetResponse updateUserPassword(UUID userId, UserDto.ChangePasswordRequest userDto) {
         if (userId == null) {
             throw new InvalidUserParameterException("userId cannot be null");
         }
@@ -567,6 +603,19 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Searching for user by provided id");
             User existingUser = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User with ID " + userId + " not found"));
@@ -611,6 +660,19 @@ public class UserService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Checking if user exists with provided id");
             getUserById(userId);
 

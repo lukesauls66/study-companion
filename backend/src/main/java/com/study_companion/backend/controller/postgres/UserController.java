@@ -18,13 +18,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.study_companion.backend.dto.AuthDto;
 import com.study_companion.backend.dto.GenericDto;
 import com.study_companion.backend.dto.UserDto;
-import com.study_companion.backend.exception.user.UnauthorizedUserAccessException;
 import com.study_companion.backend.model.Role;
 import com.study_companion.backend.service.UserService;
-import com.study_companion.backend.util.SecurityUtils;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping(value = "/api/user")
@@ -44,11 +42,8 @@ public class UserController {
 
     private final UserService userService;
 
-    private final SecurityUtils securityUtils;
-
-    UserController(UserService userService, SecurityUtils securityUtils) {
+    UserController(UserService userService) {
         this.userService = userService;
-        this.securityUtils = securityUtils;
     }
 
     @GetMapping("/getUsers")
@@ -170,22 +165,17 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
     }
 
-    //FIXME: continue here
     @PutMapping("/{userId}/verify")
     @Operation(summary = "Verify user", description = "Mark a user account as verified.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User verified successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID format"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - admin privileges required"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "User verified successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDto.GetResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid user parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+            @ApiResponse(responseCode = "403", description = "User not authenticated", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }"))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<UserDto.GetResponse> verifyUser(
             @Parameter(description = "UUID of the user to verify") @PathVariable UUID userId,
             @Parameter(hidden = true) Authentication authentication) {
-        if (!securityUtils.isAdmin(authentication)) {
-            throw new UnauthorizedUserAccessException("Unauthorized user access");
-        }
         UserDto.GetResponse user = userService.verifyUser(userId);
         return ResponseEntity.ok(user);
     }
@@ -193,19 +183,15 @@ public class UserController {
     @PutMapping("/{userId}/update")
     @Operation(summary = "Update user", description = "Update user information (name, email, username). Requires admin privileges or own user access.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "User updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data or user ID format"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "User updated successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDto.GetResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid user parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }"))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<UserDto.GetResponse> updateUser(
             @Parameter(description = "UUID of the user to update") @PathVariable UUID userId,
-            @Parameter(description = "User update data containing optional email, name, and username") @RequestBody UserDto.Update userDto,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User update data containing optional email, name, and username", required = true, content = @Content(schema = @Schema(implementation = UserDto.UpdateRequest.class))) @Valid @RequestBody UserDto.UpdateRequest userDto,
             @Parameter(hidden = true) Authentication authentication) {
-        if (!securityUtils.canAccess(authentication, userId)) {
-            throw new UnauthorizedUserAccessException("Unauthorized user access");
-        }
         UserDto.GetResponse updatedUser = userService.updateUser(userId, userDto);
         return ResponseEntity.ok(updatedUser);
     }
@@ -213,18 +199,14 @@ public class UserController {
     @PutMapping("/{userId}/updateLogin")
     @Operation(summary = "Update user login timestamp", description = "Update the user's last login timestamp to current time. Requires admin privileges or own user access.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Login timestamp updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID format"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "Login timestamp updated successfully", content = @Content(schema = @Schema(type = "string"), examples = @ExampleObject(value = "Successfully updated user's last login"))),
+            @ApiResponse(responseCode = "400", description = "Invalid user parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }"))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<String> updateUserLogin(
             @Parameter(description = "UUID of the user to update login timestamp for") @PathVariable UUID userId,
             @Parameter(hidden = true) Authentication authentication) {
-        if (!securityUtils.canAccess(authentication, userId)) {
-            throw new UnauthorizedUserAccessException("Unauthorized user access");
-        }
         userService.updateLastLogin(userId);
         return ResponseEntity.ok("Successfully updated user's last login");
     }
@@ -232,19 +214,15 @@ public class UserController {
     @PutMapping("/{userId}/updatePassword")
     @Operation(summary = "Update user password", description = "Change user's password with current password verification. Requires admin privileges or own user access.")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Password updated successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid input data, password requirements not met, or passwords don't match"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated or current password incorrect"),
-            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "200", description = "Password updated successfully", content = @Content(array = @ArraySchema(schema = @Schema(implementation = UserDto.GetResponse.class)))),
+            @ApiResponse(responseCode = "400", description = "Invalid user parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }"))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<UserDto.GetResponse> updateUserPassword(
             @Parameter(description = "UUID of the user to update password for") @PathVariable UUID userId,
-            @Parameter(description = "Password change data containing current password, new password, and confirmation") @RequestBody UserDto.ChangePassword userDto,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Password change data containing current password, new password, and confirmation", required = true, content = @Content(schema = @Schema(implementation = UserDto.ChangePasswordRequest.class))) @Valid @RequestBody UserDto.ChangePasswordRequest userDto,
             @Parameter(hidden = true) Authentication authentication) {
-        if (!securityUtils.canAccess(authentication, userId)) {
-            throw new UnauthorizedUserAccessException("Unauthorized user access");
-        }
         UserDto.GetResponse updatedUser = userService.updateUserPassword(userId, userDto);
         return ResponseEntity.ok(updatedUser);
     }
@@ -253,17 +231,13 @@ public class UserController {
     @Operation(summary = "Delete user", description = "Permanently delete a user account and all associated data. Requires admin privileges or own user access.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "User deleted successfully"),
-            @ApiResponse(responseCode = "400", description = "Invalid user ID format"),
-            @ApiResponse(responseCode = "401", description = "User not authenticated"),
-            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges"),
-            @ApiResponse(responseCode = "404", description = "User not found")
+            @ApiResponse(responseCode = "400", description = "Invalid user parameter", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Invalid parameter\", \"error\": true }"))),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient privileges", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"Access denied\", \"error\": true }"))),
+            @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<String> deleteUser(
             @Parameter(description = "UUID of the user to delete") @PathVariable UUID userId,
             @Parameter(hidden = true) Authentication authentication) {
-        if (!securityUtils.canAccess(authentication, userId)) {
-            throw new UnauthorizedUserAccessException("Unauthorized user access");
-        }
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
