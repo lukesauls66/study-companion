@@ -151,7 +151,7 @@ public class CardService {
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or card owner");
-            if (!isAdmin && card.getDeck().getUser().getId() != UUID.fromString(authentication.getName())) {
+            if (!isAdmin && !card.getDeck().getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
@@ -230,7 +230,7 @@ public class CardService {
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or card owner");
-            if (!isAdmin && cards.get(0).getDeck().getUser().getId() != UUID.fromString(authentication.getName())) {
+            if (!isAdmin && !cards.get(0).getDeck().getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 

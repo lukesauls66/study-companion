@@ -2,6 +2,9 @@ package com.study_companion.backend.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +51,7 @@ public class UploadServiceIntegrationTest {
     private DeckService deckService;
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -169,6 +173,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createUpload_NonExistentDeck_ThrowsDeckNotFoundException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -185,6 +190,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createUpload_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -283,6 +289,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUploadById_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -362,18 +369,26 @@ public class UploadServiceIntegrationTest {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
-        Deck deck = deckService.createDeck(deckCreateDto);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.pdf",
-                FileType.PNG, "https://example.com/test-file.pdf");
-        uploadService.createUpload(uploadCreateDto, 1024L, user.id());
-
-        UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
-            uploadService.getAllUploads();
-        });
-
-        assertThat(exception.getMessage()).contains("Unauthorized user access");
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+            Deck deck = deckService.createDeck(deckCreateDto);
+    
+            UploadDto.Create uploadCreateDto = new UploadDto.Create(user.id(), deck.getId(), "test-file.pdf",
+                    FileType.PNG, "https://example.com/test-file.pdf");
+            uploadService.createUpload(uploadCreateDto, 1024L, user.id());
+    
+            UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
+                uploadService.getAllUploads();
+            });
+    
+            assertThat(exception.getMessage()).contains("Unauthorized user access");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -386,6 +401,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllUserUploads_ValidInput_ReturnsUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -417,6 +433,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllDeckUploads_ValidInput_ReturnsUploads() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -448,6 +465,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCountOfAllUserUploads_ValidInput_ReturnsCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -478,6 +496,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCountOfAllDeckUploads_ValidInput_ReturnsCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -499,6 +518,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void startParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -527,6 +547,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void startParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -546,6 +567,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void startParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test1@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
@@ -568,6 +590,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void completeParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -598,6 +621,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void completeParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -617,6 +641,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void completeParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -641,6 +666,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void failParsingUpload_ValidInput_ReturnsUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -673,6 +699,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void failParsingUpload_NullErrorMessage_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -692,6 +719,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void failParsingUpload_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -711,6 +739,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void failParsingUpload_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -746,6 +775,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteUploadById_NullRequestingUserId_ThrowsInvalidUploadParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -765,6 +795,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteUploadById_UnauthorizedUser_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test1@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
@@ -787,6 +818,7 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteUploadById_ValidInput_DeletesUpload() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -875,7 +907,6 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void deleteAllUserUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -885,19 +916,27 @@ public class UploadServiceIntegrationTest {
         DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
         Deck deck2 = deckService.createDeck(deckCreateDto2);
 
-        UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG,
-                "https://example.com/file1.PDF");
-        UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck2.getId(), "file2.JPG", FileType.JPG,
-                "https://example.com/file2.JPG");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
-        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
-
-        UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
-            uploadService.deleteAllUserUploads(user.id());
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Admin access required");
+        try {
+            UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG,
+                    "https://example.com/file1.PDF");
+            UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck2.getId(), "file2.JPG", FileType.JPG,
+                    "https://example.com/file2.JPG");
+    
+            uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+            uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
+    
+            UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
+                uploadService.deleteAllUserUploads(user.id());
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("Admin access required");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -954,7 +993,6 @@ public class UploadServiceIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void deleteAllDeckUploads_NonAdmin_ThrowsUnauthorizedUploadAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
         UserDto.GetResponse user = userService.createUser(userCreateDto);
@@ -962,18 +1000,26 @@ public class UploadServiceIntegrationTest {
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
         Deck deck = deckService.createDeck(deckCreateDto);
 
-        UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG,
-                "https://example.com/file1.PDF");
-        UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG,
-                "https://example.com/file2.JPG");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
-        uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
-
-        UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
-            uploadService.deleteAllDeckUploads(user.id());
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Admin access required");
+        try {
+            UploadDto.Create uploadCreateDto1 = new UploadDto.Create(user.id(), deck.getId(), "file1.PDF", FileType.PNG,
+                    "https://example.com/file1.PDF");
+            UploadDto.Create uploadCreateDto2 = new UploadDto.Create(user.id(), deck.getId(), "file2.JPG", FileType.JPG,
+                    "https://example.com/file2.JPG");
+    
+            uploadService.createUpload(uploadCreateDto1, 1024L, user.id());
+            uploadService.createUpload(uploadCreateDto2, 2048L, user.id());
+    
+            UnauthorizedUploadAccessException exception = assertThrows(UnauthorizedUploadAccessException.class, () -> {
+                uploadService.deleteAllDeckUploads(user.id());
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("Admin access required");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }

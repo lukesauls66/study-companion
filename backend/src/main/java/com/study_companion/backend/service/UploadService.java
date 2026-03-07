@@ -266,7 +266,7 @@ public class UploadService {
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or upload owner");
-            if (!isAdmin && uploads.get(0).getUser().getId() != UUID.fromString(authentication.getName())) {
+            if (!isAdmin && !uploads.get(0).getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
             

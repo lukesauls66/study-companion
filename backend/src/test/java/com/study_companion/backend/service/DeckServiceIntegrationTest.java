@@ -94,6 +94,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getDeckById_ValidInput_ReturnsDeck() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -109,6 +110,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getDeckById_NonExistentId_ThrowsDeckNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -221,6 +223,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_ValidInput_ReturnsDeck() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -311,6 +314,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
@@ -331,6 +335,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN") 
     void deleteDeckById_ValidInput() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -384,6 +389,7 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteDeckById_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");

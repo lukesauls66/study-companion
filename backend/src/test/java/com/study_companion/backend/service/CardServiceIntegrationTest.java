@@ -9,6 +9,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +44,7 @@ public class CardServiceIntegrationTest {
     private UserService userService;
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createCard_ValidInput_ReturnsCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -69,6 +73,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createCard_InvalidUser_ThrowsUnauthorizedDeckAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -179,6 +184,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCardById_ValidInput_ReturnsCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -200,6 +206,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCardById_NullId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -221,6 +228,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCardById_NonExistentId_ThrowsCardNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -271,34 +279,38 @@ public class CardServiceIntegrationTest {
     @WithMockUser(roles = "USER")
     void getAllCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
-        UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123", "password2");
 
         UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
-        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+            user1.id().toString(), null,
+            List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck1 = deckService.createDeck(deckCreateDto1);
-        Deck deck2 = deckService.createDeck(deckCreateDto2);
-
-        CardDto.Create cardCreateDto1 = new CardDto.Create(deck1.getId(), "Test question?", "Test answer", null);
-        CardDto.Create cardCreateDto2 = new CardDto.Create(deck1.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck2.getId(), "Test question 3?", "Test answer 3",
-                "testurl.jpg");
-
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user1.id());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user1.id());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user2.id());
-
-        UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
-            cardService.getAllCards();
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+        try {
+            DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
+            
+            Deck deck1 = deckService.createDeck(deckCreateDto1);
+            
+            CardDto.Create cardCreateDto1 = new CardDto.Create(deck1.getId(), "Test question?", "Test answer", null);
+            CardDto.Create cardCreateDto2 = new CardDto.Create(deck1.getId(), "Test question 2?", "Test answer 2", null);
+    
+            cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user1.id());
+            cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user1.id());
+            
+            UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
+                cardService.getAllCards();
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllDeckCards_ValidInput_ReturnsCards() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -330,6 +342,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -356,6 +369,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCountOfAllDeckCards_ValidInput_ReturnsCardCount() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -380,6 +394,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCountOfAllDeckCards_NullDeckId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -406,6 +421,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateCard_ValidInput_ReturnsUpdatedCard() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -432,6 +448,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateCard_NullCardId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -455,11 +472,12 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN") 
     void updateCard_NullCardDto_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
-
+ 
         DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
         Deck deck = deckService.createDeck(deckCreateDto);
@@ -481,21 +499,29 @@ public class CardServiceIntegrationTest {
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck = deckService.createDeck(deckCreateDto);
-
-        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
-
-        CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
-
-        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
-            cardService.updateCard(card.getId(), cardUpdateDto, null);
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+    
+            Deck deck = deckService.createDeck(deckCreateDto);
+    
+            CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+    
+            Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+    
+            CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
+    
+            InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+                cardService.updateCard(card.getId(), cardUpdateDto, null);
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -504,21 +530,29 @@ public class CardServiceIntegrationTest {
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck = deckService.createDeck(deckCreateDto);
-
-        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
-
-        CardDto.Update cardUpdateDto = new CardDto.Update("", "", "");
-
-        InvalidCardUpdateException exception = assertThrows(InvalidCardUpdateException.class, () -> {
-            cardService.updateCard(card.getId(), cardUpdateDto, user.id());
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("At least one field must be provided");
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+    
+            Deck deck = deckService.createDeck(deckCreateDto);
+    
+            CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+    
+            Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+    
+            CardDto.Update cardUpdateDto = new CardDto.Update("", "", "");
+    
+            InvalidCardUpdateException exception = assertThrows(InvalidCardUpdateException.class, () -> {
+                cardService.updateCard(card.getId(), cardUpdateDto, user.id());
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("At least one field must be provided");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -527,26 +561,35 @@ public class CardServiceIntegrationTest {
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck = deckService.createDeck(deckCreateDto);
-
-        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
-
-        CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
-
-        UUID unauthorizedUUID = UUID.randomUUID();
-
-        UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
-            cardService.updateCard(card.getId(), cardUpdateDto, unauthorizedUUID);
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("You can only update your own cards");
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+    
+            Deck deck = deckService.createDeck(deckCreateDto);
+    
+            CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+    
+            Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+    
+            CardDto.Update cardUpdateDto = new CardDto.Update("Updated question?", "Updated answer", "updated-image.jpg");
+    
+            UUID unauthorizedUUID = UUID.randomUUID();
+    
+            UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
+                cardService.updateCard(card.getId(), cardUpdateDto, unauthorizedUUID);
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("You can only update your own cards");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteCardById_ValidInput() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -570,6 +613,7 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteCardById_NullCardId_ThrowsInvalidCardParameterException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -596,22 +640,31 @@ public class CardServiceIntegrationTest {
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck = deckService.createDeck(deckCreateDto);
-
-        CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-
-        Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
-
-        InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
-            cardService.deleteCardById(card.getId(), null);
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+    
+            Deck deck = deckService.createDeck(deckCreateDto);
+    
+            CardDto.Create cardCreateDto = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+    
+            Card card = cardService.createCard(cardCreateDto, CardCreationType.MANUAL_UPLOAD, user.id());
+    
+            InvalidCardParameterException exception = assertThrows(InvalidCardParameterException.class, () -> {
+                cardService.deleteCardById(card.getId(), null);
+            });
+    
+            assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteCardById_UnauthorizedUser_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
@@ -691,32 +744,41 @@ public class CardServiceIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void deleteAllDeckCards_NonAdmin_ThrowsUnauthorizedCardAccessException() {
         UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", "password");
 
         UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+            user.id().toString(), null,
+            List.of(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        try {
+            DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
 
-        CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
-        CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
-        CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
-                "testurl.jpg");
+            Deck deck = deckService.createDeck(deckCreateDto);
 
-        cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
-        cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
-        cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
+            CardDto.Create cardCreateDto1 = new CardDto.Create(deck.getId(), "Test question?", "Test answer", null);
+            CardDto.Create cardCreateDto2 = new CardDto.Create(deck.getId(), "Test question 2?", "Test answer 2", null);
+            CardDto.Create cardCreateDto3 = new CardDto.Create(deck.getId(), "Test question 3?", "Test answer 3",
+                    "testurl.jpg");
 
-        Deck refreshedDeck1 = deckService.getDeckById(deck.getId());
-        assertThat(refreshedDeck1.getCards()).hasSize(3);
+            cardService.createCard(cardCreateDto1, CardCreationType.MANUAL_UPLOAD, user.id());
+            cardService.createCard(cardCreateDto2, CardCreationType.MANUAL_UPLOAD, user.id());
+            cardService.createCard(cardCreateDto3, CardCreationType.MANUAL_UPLOAD, user.id());
 
-        UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
-            cardService.deleteAllDeckCards(deck.getId());
-        });
+            Deck refreshedDeck1 = deckService.getDeckById(deck.getId());
+            assertThat(refreshedDeck1.getCards()).hasSize(3);
 
-        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+            UnauthorizedCardAccessException exception = assertThrows(UnauthorizedCardAccessException.class, () -> {
+                cardService.deleteAllDeckCards(deck.getId());
+            });
+
+            assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }

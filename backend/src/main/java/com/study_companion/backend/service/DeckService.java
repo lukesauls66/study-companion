@@ -120,7 +120,7 @@ public class DeckService {
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or deck owner");
-            if (!isAdmin && deck.getUser().getId() != UUID.fromString(authentication.getName())) {
+            if (!isAdmin && !deck.getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 

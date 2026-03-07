@@ -174,8 +174,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<UserDto.GetResponse> verifyUser(
-            @Parameter(description = "UUID of the user to verify") @PathVariable UUID userId,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(description = "UUID of the user to verify") @PathVariable UUID userId) {
         UserDto.GetResponse user = userService.verifyUser(userId);
         return ResponseEntity.ok(user);
     }
@@ -190,8 +189,7 @@ public class UserController {
     })
     public ResponseEntity<UserDto.GetResponse> updateUser(
             @Parameter(description = "UUID of the user to update") @PathVariable UUID userId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User update data containing optional email, name, and username", required = true, content = @Content(schema = @Schema(implementation = UserDto.UpdateRequest.class))) @Valid @RequestBody UserDto.UpdateRequest userDto,
-            @Parameter(hidden = true) Authentication authentication) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "User update data containing optional email, name, and username", required = true, content = @Content(schema = @Schema(implementation = UserDto.UpdateRequest.class))) @Valid @RequestBody UserDto.UpdateRequest userDto) {
         UserDto.GetResponse updatedUser = userService.updateUser(userId, userDto);
         return ResponseEntity.ok(updatedUser);
     }
@@ -205,8 +203,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<String> updateUserLogin(
-            @Parameter(description = "UUID of the user to update login timestamp for") @PathVariable UUID userId,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(description = "UUID of the user to update login timestamp for") @PathVariable UUID userId) {
         userService.updateLastLogin(userId);
         return ResponseEntity.ok("Successfully updated user's last login");
     }
@@ -221,8 +218,7 @@ public class UserController {
     })
     public ResponseEntity<UserDto.GetResponse> updateUserPassword(
             @Parameter(description = "UUID of the user to update password for") @PathVariable UUID userId,
-            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Password change data containing current password, new password, and confirmation", required = true, content = @Content(schema = @Schema(implementation = UserDto.ChangePasswordRequest.class))) @Valid @RequestBody UserDto.ChangePasswordRequest userDto,
-            @Parameter(hidden = true) Authentication authentication) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(description = "Password change data containing current password, new password, and confirmation", required = true, content = @Content(schema = @Schema(implementation = UserDto.ChangePasswordRequest.class))) @Valid @RequestBody UserDto.ChangePasswordRequest userDto) {
         UserDto.GetResponse updatedUser = userService.updateUserPassword(userId, userDto);
         return ResponseEntity.ok(updatedUser);
     }
@@ -236,8 +232,7 @@ public class UserController {
             @ApiResponse(responseCode = "404", description = "User not found", content = @Content(schema = @Schema(implementation = GenericDto.ErrorResponse.class), examples = @ExampleObject(value = "{ \"message\": \"User not found\", \"error\": true }")))
     })
     public ResponseEntity<String> deleteUser(
-            @Parameter(description = "UUID of the user to delete") @PathVariable UUID userId,
-            @Parameter(hidden = true) Authentication authentication) {
+            @Parameter(description = "UUID of the user to delete") @PathVariable UUID userId) {
         userService.deleteUser(userId);
         return ResponseEntity.noContent().build();
     }
