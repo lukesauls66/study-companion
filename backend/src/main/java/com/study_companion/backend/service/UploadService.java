@@ -43,14 +43,10 @@ public class UploadService {
 
     private final DeckRepository deckRepository;
 
-    private final DeckService deckService;
-
-    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckRepository deckRepository,
-            DeckService deckService) {
+    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckRepository deckRepository) {
         this.uploadRepository = uploadRepository;
         this.userRepository = userRepository;
         this.deckRepository = deckRepository;
-        this.deckService = deckService;
     }
 
     /**
@@ -157,6 +153,9 @@ public class UploadService {
      * @return the upload with the specified ID
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws UploadNotFoundException         if no upload exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the upload
      * @throws UploadOperationException        if server error occurs
      */
     public UploadDto.GetResponse getUploadById(UUID id) {
@@ -177,7 +176,7 @@ public class UploadService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedDeckAccessException("Authentication required");
+                throw new UnauthorizedUserAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -185,10 +184,13 @@ public class UploadService {
 
             logger.debug("Checking if user is admin");
             if (!isAdmin && !upload.userId().equals(UUID.fromString(authentication.getName()))) {
-                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
             return upload;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UploadException e) {
             logger.error("Upload fetch failed: {}", e.getMessage());
             throw e;
@@ -203,15 +205,17 @@ public class UploadService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all uploads in the system
-     * @throws UnauthorizedUploadAccessException if requesting user is not an admin
-     * @throws UploadOperationException          if server error occurs
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being fetched
+     * @throws UploadOperationException        if server error occurs
      */
     public List<UploadDto.GetResponse> getAllUploads() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedUploadAccessException("Authentication required");
+                throw new UnauthorizedUserAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -219,13 +223,16 @@ public class UploadService {
 
             logger.debug("Checking if user is admin");
             if (!isAdmin) {
-                throw new UnauthorizedUploadAccessException("Unauthorized user access");
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
             logger.debug("Fetching all uploads");
             List<UploadDto.GetResponse> uploads = uploadRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all uploads");
             return uploads;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UploadException e) {
             logger.error("Upload operation failed: {}", e.getMessage());
             throw e;
@@ -241,6 +248,9 @@ public class UploadService {
      * @param userId the UUID of the user whose uploads to retrieve
      * @return a list of uploads owned by the user, empty if user has no uploads
      * @throws InvalidUploadParameterException if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the uploads
      * @throws UploadOperationException        if server error occurs
      */
     public List<UploadDto.GetResponse> getAllUserUploads(UUID userId) {
@@ -252,7 +262,7 @@ public class UploadService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (authentication == null) {
-                throw new UnauthorizedDeckAccessException("Authentication required");
+                throw new UnauthorizedUserAccessException("Authentication required");
             }
 
             boolean isAdmin = authentication.getAuthorities().stream()
@@ -260,7 +270,7 @@ public class UploadService {
 
             logger.debug("Checking if user is authorized");
             if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
-                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
             logger.debug("Fetching all uploads belonging to the provided user");
@@ -268,6 +278,9 @@ public class UploadService {
                     .map(this::convertToDto).toList();
             logger.info("Successfully fetched all uploads belonging to the provided user");
             return userUploads;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch uploads: {}", e.getMessage());
             throw new UploadOperationException("Failed to fetch uploads", e);
@@ -280,6 +293,9 @@ public class UploadService {
      * @param deckId the UUID of the deck whose uploads to retrieve
      * @return a list of uploads belonging to the deck, empty if deck has no uploads
      * @throws InvalidUploadParameterException if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the deck
      * @throws UploadOperationException        if server error occurs
      */
     public List<UploadDto.GetResponse> getAllDeckUploads(UUID deckId) {
@@ -310,6 +326,9 @@ public class UploadService {
             logger.info("Successfully fetched all uploads belonging to the provided deck");
 
             return uploads;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all uploads belonging to the provided deck: {}", e.getMessage());
             throw new UploadOperationException("Failed to fetch all uploads belonging to the provided deck", e);

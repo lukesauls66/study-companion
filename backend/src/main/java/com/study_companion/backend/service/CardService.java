@@ -126,9 +126,13 @@ public class CardService {
      * 
      * @param id the UUID of the card to retrieve
      * @return the card with the specified ID
-     * @throws InvalidCardParameterException if any nonnull arg is null
-     * @throws CardNotFoundException         if no card exists with the given ID
-     * @throws CardOperationException        if server error occurs
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws CardNotFoundException           if no card exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the
+     *                                         deck/card
+     * @throws CardOperationException          if server error occurs
      */
     public CardDto.GetResponse getCardById(UUID id) {
         if (id == null) {
@@ -162,6 +166,9 @@ public class CardService {
         } catch (CardNotFoundException e) {
             logger.error("Card does not exist with provided id: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch card by provided id: {}", e.getMessage());
             throw new CardOperationException("Failed to fetch card by provided id", e);
@@ -173,7 +180,8 @@ public class CardService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all cards in the system
-     * @throws UnauthorizedCardAccessException if requesting user is not an admin
+     * @throws UnauthorizedCardAccessException if requesting user is signed in or
+     *                                         not an admin
      * @throws CardOperationException          if server error occurs
      */
     public List<CardDto.GetResponse> getAllCards() {
@@ -210,8 +218,11 @@ public class CardService {
      * 
      * @param deckId the UUID of the deck whose cards to retrieve
      * @return a list of cards owned by the deck, empty if deck has no cards
-     * @throws InvalidCardParameterException if any nonnull arg is null
-     * @throws CardOperationException        if server error occurs
+     * @throws InvalidCardParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the deck
+     * @throws CardOperationException          if server error occurs
      */
     public List<CardDto.GetResponse> getAllDeckCards(UUID deckId) {
         if (deckId == null) {
@@ -242,6 +253,9 @@ public class CardService {
             logger.info("Successfully fetched all cards belonging to the provided deckId");
 
             return cards;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all cards belonging to the provided deckId: {}", e.getMessage());
             throw new CardOperationException("Failed to fetch all cards belonging to the provided deckId", e);
