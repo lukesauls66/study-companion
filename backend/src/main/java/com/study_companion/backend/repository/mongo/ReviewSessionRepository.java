@@ -23,7 +23,7 @@ public interface ReviewSessionRepository extends MongoRepository<ReviewSession, 
     long countByDeckId(UUID deckId);
 
     /**
-     * Find latest session for a deck 
+     * Find latest session for a deck
      */
     ReviewSession findTopByDeckIdOrderByDateDesc(UUID deckId);
 

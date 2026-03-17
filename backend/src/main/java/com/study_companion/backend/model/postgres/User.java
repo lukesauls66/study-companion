@@ -145,7 +145,7 @@ public class User {
         return uploads;
     }
 
-    //Helpers for managing bi-directional relationship
+    // Helpers for managing bi-directional relationship
     public void addDeck(Deck deck) {
         decks.add(deck);
         deck.setUser(this);
@@ -166,7 +166,7 @@ public class User {
         upload.setUser(null);
     }
 
-    //Lifecycle Callbacks
+    // Lifecycle Callbacks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

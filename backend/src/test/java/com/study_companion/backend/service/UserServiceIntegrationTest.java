@@ -122,13 +122,14 @@ public class UserServiceIntegrationTest {
 
         UserDto.GetResponse createdUser = userService.createUser(createDto);
 
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(createdUser.id().toString(), null,
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(createdUser.id().toString(),
+                null,
                 List.of(new SimpleGrantedAuthority("ROLE_USER")));
         SecurityContextHolder.getContext().setAuthentication(auth);
 
         try {
             UserDto.GetResponse user = userService.getUserById(createdUser.id());
-    
+
             assertThat(user.email()).isEqualTo("test@email.com");
             assertThat(user.name()).isEqualTo("John Smith");
             assertThat(user.username()).isEqualTo("john123");
@@ -444,10 +445,10 @@ public class UserServiceIntegrationTest {
 
         try {
             UserDto.UpdateRequest dto = new UserDto.UpdateRequest("newtest@email.com", null, null);
-    
+
             userService.updateUser(user.id(), dto);
             UserDto.GetResponse refreshedUser = userService.getUserById(user.id());
-    
+
             assertThat(refreshedUser.email()).isEqualTo("newtest@email.com");
             assertThat(refreshedUser.name()).isEqualTo("John Smith");
             assertThat(refreshedUser.username()).isEqualTo("john123");
@@ -477,13 +478,13 @@ public class UserServiceIntegrationTest {
             InvalidUserUpdateException exception1 = assertThrows(InvalidUserUpdateException.class, () -> {
                 userService.updateUser(user.id(), dto1);
             });
-    
+
             assertThat(exception1.getMessage()).isEqualTo("Email is already set to this value");
-    
+
             UserAlreadyExistsException exception2 = assertThrows(UserAlreadyExistsException.class, () -> {
                 userService.updateUser(user.id(), dto2);
             });
-    
+
             assertThat(exception2.getMessage()).isEqualTo("User with this email already exists");
         } finally {
             SecurityContextHolder.clearContext();
@@ -671,11 +672,11 @@ public class UserServiceIntegrationTest {
         try {
             UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("password", "newpassword",
                     "differentpassword");
-    
+
             InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
                 userService.updateUserPassword(user.id(), changeDto);
             });
-    
+
             assertThat(exception.getMessage()).isEqualTo("New password doesn't match confirm password");
         } finally {
             SecurityContextHolder.clearContext();

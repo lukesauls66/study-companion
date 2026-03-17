@@ -43,7 +43,7 @@ public class ReviewSession {
     @Min(0)
     private int correctAnswers;
 
-    //Constructors
+    // Constructors
     public ReviewSession() {
         this.id = UUID.randomUUID();
         this.date = LocalDateTime.now();

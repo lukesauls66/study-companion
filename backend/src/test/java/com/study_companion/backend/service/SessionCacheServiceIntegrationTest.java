@@ -26,7 +26,7 @@ public class SessionCacheServiceIntegrationTest {
 
     @Autowired
     private SessionCacheService sessionCacheService;
- 
+
     @Test
     void createSession_ValidInput_ReturnsSession() {
         UUID userId = UUID.randomUUID();
@@ -102,7 +102,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(cachedDecks.getDecks().get(0).getTitle()).isEqualTo("Test Deck");
     }
 
-    @Test 
+    @Test
     void createOrUpdateCachedDecks_EmptyDeckList_ReturnsCachedDecks() {
         UUID userId = UUID.randomUUID();
         List<DeckCache> deckCaches = new ArrayList<>();
@@ -114,7 +114,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(cachedDecks.getDecks()).isEmpty();
     }
 
-    @Test 
+    @Test
     void createOrUpdateCachedDecks_NullDeckList_ReturnsCachedDecks() {
         UUID userId = UUID.randomUUID();
 
@@ -125,7 +125,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(cachedDecks.getDecks()).isEmpty();
     }
 
-    @Test 
+    @Test
     void createOrUpdateCachedDecks_NullUserId_ThrowsInvalidSessionParameterException() {
         List<DeckCache> deckCaches = new ArrayList<>();
 
@@ -136,7 +136,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when caching decks");
     }
 
-    @Test 
+    @Test
     void createOrUpdateCachedDecks_UpdateExisting_ReturnsUpdatedCachedDecks() {
         UUID userId = UUID.randomUUID();
         List<DeckCache> initialDecks = new ArrayList<>();
@@ -156,7 +156,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(updatedCachedDecks.getDecks().get(0).getTitle()).isEqualTo("Updated Deck");
     }
 
-    @Test 
+    @Test
     void updateSpecificDeckInCache_ValidInput_ReturnsUpdatedCachedDecks() {
         UUID userId = UUID.randomUUID();
         UUID deckId = UUID.randomUUID();
@@ -170,7 +170,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(cachedDecks.getDecks().get(0).getTitle()).isEqualTo("Updated Deck");
     }
 
-    @Test 
+    @Test
     void updateSpecificDeckInCache_NullUserId_ThrowsInvalidSessionParameterException() {
         UUID deckId = UUID.randomUUID();
         DeckCache updatedDeckCache = new DeckCache(UUID.randomUUID(), "Test", "Test Description");
@@ -182,7 +182,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when updating deck cache");
     }
 
-    @Test 
+    @Test
     void updateSpecificDeckInCache_NullDeckId_ThrowsInvalidSessionParameterException() {
         UUID userId = UUID.randomUUID();
         DeckCache updatedDeckCache = new DeckCache(UUID.randomUUID(), "Test", "Test Description");
@@ -194,7 +194,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Deck ID cannot be null when updating deck cache");
     }
 
-    @Test 
+    @Test
     void updateSpecificDeckInCache_NullDeckCache_ThrowsInvalidSessionParameterException() {
         UUID userId = UUID.randomUUID();
         UUID deckId = UUID.randomUUID();
@@ -206,11 +206,11 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Updated deck cache cannot be null");
     }
 
-    @Test 
+    @Test
     void removeSingleDeckFromCache_ValidInput_ReturnsUpdatedCachedDecks() {
         UUID userId = UUID.randomUUID();
         UUID deckId = UUID.randomUUID();
-        
+
         List<DeckCache> deckCaches = new ArrayList<>();
         DeckCache deckCache = new DeckCache(deckId, "Test Deck", "Test Description");
         deckCaches.add(deckCache);
@@ -222,7 +222,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(updatedCache.getDecks()).isEmpty();
     }
 
-    @Test 
+    @Test
     void removeSingleDeckFromCache_NoExistingCache_ReturnsNull() {
         UUID userId = UUID.randomUUID();
         UUID deckId = UUID.randomUUID();
@@ -232,7 +232,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isNull();
     }
 
-    @Test 
+    @Test
     void removeSingleDeckFromCache_NullUserId_ThrowsInvalidSessionParameterException() {
         UUID deckId = UUID.randomUUID();
 
@@ -243,7 +243,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when removing deck from cache");
     }
 
-    @Test 
+    @Test
     void removeSingleDeckFromCache_NullDeckId_ThrowsInvalidSessionParameterException() {
         UUID userId = UUID.randomUUID();
 
@@ -254,7 +254,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("Deck ID cannot be null when removing deck from cache");
     }
 
-    @Test 
+    @Test
     void refreshCachedDecks_ValidInput_ReturnsCachedDecks() {
         UUID userId = UUID.randomUUID();
         List<DeckCache> deckCaches = new ArrayList<>();
@@ -269,7 +269,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(cachedDecks.getDecks().get(0).getTitle()).isEqualTo("Refreshed Deck");
     }
 
-    @Test 
+    @Test
     void refreshCachedDecks_NullUserId_ThrowsInvalidSessionParameterException() {
         List<DeckCache> deckCaches = new ArrayList<>();
 
@@ -280,16 +280,16 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when refreshing deck cache");
     }
 
-    @Test 
+    @Test
     void invalidateCachedDecks_ValidInput_DoesNotThrow() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createOrUpdateCachedDecks(userId, new ArrayList<>());
 
         sessionCacheService.invalidateCachedDecks(userId);
     }
 
-    @Test 
+    @Test
     void invalidateCachedDecks_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
             sessionCacheService.invalidateCachedDecks(null);
@@ -298,10 +298,10 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when invalidating deck cache");
     }
 
-    @Test 
+    @Test
     void refreshSession_ValidInput_ReturnsTrue() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createSession(userId, 3600L);
 
         boolean result = sessionCacheService.refreshSession(userId, 1800L);
@@ -309,7 +309,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isTrue();
     }
 
-    @Test 
+    @Test
     void refreshSession_NoExistingSession_ReturnsFalse() {
         UUID userId = UUID.randomUUID();
 
@@ -318,7 +318,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isFalse();
     }
 
-    @Test 
+    @Test
     void refreshSession_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
             sessionCacheService.refreshSession(null, 1800L);
@@ -327,7 +327,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when refreshing session");
     }
 
-    @Test 
+    @Test
     void refreshSession_NegativeAdditionalSeconds_ThrowsInvalidSessionParameterException() {
         UUID userId = UUID.randomUUID();
 
@@ -338,7 +338,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).contains("Additional seconds must be positive, got: -100");
     }
 
-    @Test 
+    @Test
     void refreshSession_ZeroAdditionalSeconds_ThrowsInvalidSessionParameterException() {
         UUID userId = UUID.randomUUID();
 
@@ -349,10 +349,10 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).contains("Additional seconds must be positive, got: 0");
     }
 
-    @Test 
+    @Test
     void refreshSessionDefault_ValidInput_ReturnsTrue() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createSession(userId, 3600L);
 
         boolean result = sessionCacheService.refreshSession(userId);
@@ -360,7 +360,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isTrue();
     }
 
-    @Test 
+    @Test
     void refreshSessionDefault_NoExistingSession_ReturnsFalse() {
         UUID userId = UUID.randomUUID();
 
@@ -369,7 +369,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isFalse();
     }
 
-    @Test 
+    @Test
     void refreshSessionDefault_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
             sessionCacheService.refreshSession(null);
@@ -378,17 +378,17 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when refreshing session");
     }
 
-    @Test 
+    @Test
     void logout_ValidInput_DoesNotThrow() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createSession(userId, 3600L);
         sessionCacheService.createOrUpdateCachedDecks(userId, new ArrayList<>());
 
         sessionCacheService.clearSessionAndCachedDecks(userId);
     }
 
-    @Test 
+    @Test
     void logout_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
             sessionCacheService.clearSessionAndCachedDecks(null);
@@ -397,10 +397,10 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("User ID cannot be null when logging out");
     }
 
-    @Test 
+    @Test
     void getCachedDecksIfSessionValid_ValidSession_ReturnsCachedDecks() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createSession(userId, 3600L);
         List<DeckCache> deckCaches = new ArrayList<>();
         DeckCache deckCache = new DeckCache(UUID.randomUUID(), "Test Deck", "Test Description");
@@ -414,7 +414,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result.get().getDecks()).hasSize(1);
     }
 
-    @Test 
+    @Test
     void getCachedDecksIfSessionValid_NoSession_ReturnsEmpty() {
         UUID userId = UUID.randomUUID();
 
@@ -423,10 +423,10 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isEmpty();
     }
 
-    @Test 
+    @Test
     void getCachedDecksIfSessionValid_SessionButNoCache_ReturnsEmpty() {
         UUID userId = UUID.randomUUID();
-        
+
         sessionCacheService.createSession(userId, 3600L);
 
         Optional<CachedDecks> result = sessionCacheService.getCachedDecksIfSessionValid(userId);
@@ -434,7 +434,7 @@ public class SessionCacheServiceIntegrationTest {
         assertThat(result).isEmpty();
     }
 
-    @Test 
+    @Test
     void getCachedDecksIfSessionValid_NullUserId_ThrowsInvalidSessionParameterException() {
         InvalidSessionParameterException exception = assertThrows(InvalidSessionParameterException.class, () -> {
             sessionCacheService.getCachedDecksIfSessionValid(null);

@@ -7,7 +7,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
+import com.study_companion.backend.dto.CardDto;
 import com.study_companion.backend.dto.DeckDto;
+import com.study_companion.backend.dto.UploadDto;
 import com.study_companion.backend.exception.deck.DeckException;
 import com.study_companion.backend.exception.deck.DeckNotFoundException;
 import com.study_companion.backend.exception.deck.DeckOperationException;
@@ -20,7 +22,9 @@ import com.study_companion.backend.exception.user.UnauthorizedUserAccessExceptio
 import com.study_companion.backend.exception.user.UserException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
 import com.study_companion.backend.exception.user.UserOperationException;
+import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
+import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.DeckRepository;
 import com.study_companion.backend.repository.postgres.UserRepository;
@@ -57,7 +61,7 @@ public class DeckService {
      * @throws UserOperationException        if user operations fail
      * @throws DeckOperationException        if server error occurs
      */
-    public Deck createDeck(DeckDto.Create deckDto) {
+    public DeckDto.GetResponse createDeck(DeckDto.CreateRequest deckDto) {
         if (deckDto == null) {
             throw new InvalidDeckParameterException("Deck data transfer object cannot be null");
         }
@@ -71,6 +75,12 @@ public class DeckService {
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
             User user = userRepository.findById(deckDto.userId())
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
@@ -78,7 +88,9 @@ public class DeckService {
 
             user.addDeck(deck);
 
-            return deckRepository.save(deck);
+            Deck savedDeck = deckRepository.save(deck);
+            logger.info("Successfully created deck");
+            return convertToDto(savedDeck);
         } catch (UserException e) {
             logger.error("Deck creation failed due to user issue: {}", e.getMessage());
             throw e;
@@ -97,14 +109,14 @@ public class DeckService {
      * @throws DeckNotFoundException         if no deck exists with the given ID
      * @throws DeckOperationException        if server error occurs
      */
-    public Deck getDeckById(UUID id) {
+    public DeckDto.GetResponse getDeckById(UUID id) {
         if (id == null) {
             throw new InvalidDeckParameterException("ID cannot not be null");
         }
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            
+
             if (authentication == null) {
                 throw new UnauthorizedUserAccessException("Authentication required");
             }
@@ -124,7 +136,53 @@ public class DeckService {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
-            return deck;
+            return convertToDto(deck);
+        } catch (DeckNotFoundException e) {
+            logger.error("Deck not found with provided ID: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            logger.error("Failed to fetch deck: {}", e.getMessage());
+            throw new DeckOperationException("Failed to fetch deck", e);
+        }
+    }
+
+    /**
+     * Retrieves a deck by its unique identifier.
+     * 
+     * @param id the UUID of the deck to retrieve
+     * @return the deck with the specified ID
+     * @throws InvalidDeckParameterException if any nonnull arg is null
+     * @throws DeckNotFoundException         if no deck exists with the given ID
+     * @throws DeckOperationException        if server error occurs
+     */
+    public DeckDto.GetResponseWithCardsAndUploads getDeckByIdWithCardsAndUploads(UUID id) {
+        if (id == null) {
+            throw new InvalidDeckParameterException("ID cannot not be null");
+        }
+
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            logger.debug("Checking if deck exists by provided ID");
+            if (!deckRepository.existsById(id)) {
+                throw new DeckNotFoundException("Deck with ID " + id + " not found");
+            }
+            Deck deck = deckRepository.findById(id).get();
+            logger.info("Found deck with provided ID");
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin or deck owner");
+            if (!isAdmin && !deck.getUser().getId().equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Unauthorized user access");
+            }
+
+            return convertToDtoWithCardsAndUploads(deck);
         } catch (DeckNotFoundException e) {
             logger.error("Deck not found with provided ID: {}", e.getMessage());
             throw e;
@@ -143,7 +201,7 @@ public class DeckService {
      *                                         an admin
      * @throws DeckOperationException          if server error occurs
      */
-    public List<Deck> getAllDecks() {
+    public List<DeckDto.GetResponse> getAllDecks() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -160,7 +218,7 @@ public class DeckService {
             }
 
             logger.debug("Fetching all decks");
-            List<Deck> decks = deckRepository.findAll();
+            List<DeckDto.GetResponse> decks = deckRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all decks");
             return decks;
         } catch (DeckException e) {
@@ -180,14 +238,28 @@ public class DeckService {
      * @throws InvalidDeckParameterException if any nonnull arg is null
      * @throws DeckOperationException        if server error occurs
      */
-    public List<Deck> getAllUserDecks(UUID userId) {
+    public List<DeckDto.GetResponse> getAllUserDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidDeckParameterException("userId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Fetching all decks belonging to the provided user");
-            List<Deck> decks = deckRepository.findByUserId(userId);
+            List<DeckDto.GetResponse> decks = deckRepository.findByUserId(userId).stream().map(this::convertToDto)
+                    .toList();
             logger.info("Fetched all decks belonging to the provided user");
             return decks;
         } catch (Exception e) {
@@ -204,14 +276,27 @@ public class DeckService {
      * @throws InvalidDeckParameterException if any nonnull arg is null
      * @throws DeckOperationException        if server error occurs
      */
-    public long getCountOfAllUserDecks(UUID userId) {
+    public Long getCountOfAllUserDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidDeckParameterException("userId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedUserAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedUserAccessException("Authentication failed");
+            }
+
             logger.debug("Counting how many decks the provided user has");
-            long deckCount = deckRepository.countByUserId(userId);
+            Long deckCount = deckRepository.countByUserId(userId);
             logger.info("This user has {} decks", deckCount);
             return deckCount;
         } catch (Exception e) {
@@ -238,7 +323,7 @@ public class DeckService {
      *                                         deck owner
      * @throws DeckOperationException          if server error occurs
      */
-    public Deck updateDeck(UUID deckId, DeckDto.Update deckDto, UUID requestingUserId) {
+    public DeckDto.GetResponse updateDeck(UUID deckId, DeckDto.UpdateRequest deckDto, UUID requestingUserId) {
         if (deckId == null) {
             throw new InvalidDeckParameterException("deckId cannot be null");
         }
@@ -259,7 +344,8 @@ public class DeckService {
         }
 
         try {
-            Deck existingDeck = getDeckById(deckId);
+            Deck existingDeck = deckRepository.findById(deckId)
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + deckId + " not found"));
 
             logger.debug("Checking if user requesting this deck update is authorized");
             if (!existingDeck.getUser().getId().equals(requestingUserId)) {
@@ -277,7 +363,7 @@ public class DeckService {
             logger.debug("Updating deck");
             Deck updatedDeck = deckRepository.save(existingDeck);
             logger.info("Successfully updated deck");
-            return updatedDeck;
+            return convertToDto(updatedDeck);
         } catch (DeckException e) {
             logger.error("Deck update failed: {}", e.getMessage());
             throw e;
@@ -310,7 +396,8 @@ public class DeckService {
         }
 
         try {
-            Deck deck = getDeckById(deckId);
+            Deck deck = deckRepository.findById(deckId)
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + deckId + " not found"));
 
             logger.debug("Checking if user requesting this deck delete is authorized");
             if (!deck.getUser().getId().equals(requestingUserId)) {
@@ -362,8 +449,8 @@ public class DeckService {
             boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
-            logger.debug("Checking if user is admin");
-            if (!isAdmin) {
+            logger.debug("Checking if user is authorized");
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedDeckAccessException("Unauthorized user access");
             }
 
@@ -386,5 +473,30 @@ public class DeckService {
             logger.error("Failed to delete decks: {}", e.getMessage());
             throw new DeckOperationException("Failed to delete decks", e);
         }
+    }
+
+    private DeckDto.GetResponse convertToDto(Deck deck) {
+        return new DeckDto.GetResponse(deck.getId(), deck.getUser().getId(), deck.getTitle(), deck.getDescription(),
+                deck.getCreatedAt(), deck.getUpdatedAt());
+    }
+
+    private DeckDto.GetResponseWithCardsAndUploads convertToDtoWithCardsAndUploads(Deck deck) {
+        return new DeckDto.GetResponseWithCardsAndUploads(deck.getId(), deck.getUser().getId(), deck.getTitle(),
+                deck.getDescription(),
+                deck.getCreatedAt(), deck.getUpdatedAt(),
+                deck.getCards().stream().map(this::convertToNestedCardObject).toList(),
+                deck.getUploads().stream().map(this::convertToNestedUploadObject).toList());
+    }
+
+    private CardDto.GetResponse convertToNestedCardObject(Card card) {
+        return new CardDto.GetResponse(card.getId(), card.getDeck().getId(), card.getQuestion(), card.getAnswer(),
+                card.getImageUrl(), card.getCreationType(), card.getCreatedAt(), card.getUpdatedAt());
+    }
+
+    private UploadDto.GetResponse convertToNestedUploadObject(Upload upload) {
+        return new UploadDto.GetResponse(upload.getId(), upload.getUser().getId(), upload.getDeck().getId(),
+                upload.getFileName(), upload.getFileUrl(), upload.getFileType(), upload.getIsParsed(),
+                upload.getParsingStatus(), upload.getErrorMessage(), upload.getParsingStartedAt(),
+                upload.getParsingCompletedAt(), upload.getCreatedAt(), upload.getUpdatedAt());
     }
 }

@@ -12,12 +12,12 @@ public class SecurityUtils {
         return authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
     }
-    
+
     public boolean canAccess(Authentication authentication, UUID userId) {
         if (isAdmin(authentication)) {
             return true;
         }
-        
+
         UUID requestingUserId = UUID.fromString(authentication.getName());
         return requestingUserId.equals(userId);
     }

@@ -49,7 +49,7 @@ public class ReviewSessionTest {
         assertEquals(cardsReviewed, session.getCardsReviewed());
         assertEquals(correctAnswers, session.getCorrectAnswers());
     }
-    
+
     @Test
     void testToString() {
         ReviewSession session = new ReviewSession(deckId, userId, deckName, score, cardsReviewed, correctAnswers);

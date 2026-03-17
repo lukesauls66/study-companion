@@ -22,13 +22,13 @@ public class DeckAnalyticsServiceIntegrationTest {
 
     @Autowired
     private DeckAnalyticsService deckAnalyticsService;
-    
+
     @Autowired
     private DeckAnalyticsRepository deckAnalyticsRepository;
-    
+
     @Autowired
     private ReviewSessionRepository reviewSessionRepository;
-    
+
     @AfterEach
     void cleanup() {
         // Clean up test data after each test
@@ -46,7 +46,7 @@ public class DeckAnalyticsServiceIntegrationTest {
         int correctAnswers = 8;
 
         ReviewSession reviewSession = deckAnalyticsService.createReviewSession(
-            deckId, userId, deckName, score, cardsReviewed, correctAnswers);
+                deckId, userId, deckName, score, cardsReviewed, correctAnswers);
 
         assertThat(reviewSession).isNotNull();
         assertThat(reviewSession.getId()).isNotNull();
@@ -99,7 +99,7 @@ public class DeckAnalyticsServiceIntegrationTest {
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByDeckId(deckId);
         assertThat(analytics).hasSize(1);
-        
+
         DeckAnalytics deckAnalytics = analytics.get(0);
         assertThat(deckAnalytics.getDeckId()).isEqualTo(deckId);
         assertThat(deckAnalytics.getUserId()).isEqualTo(userId);
@@ -116,16 +116,16 @@ public class DeckAnalyticsServiceIntegrationTest {
 
         // Create first review session
         deckAnalyticsService.createReviewSession(deckId, userId, deckName, 80, 10, 8);
-        
+
         // Create second review session with higher score
         deckAnalyticsService.createReviewSession(deckId, userId, deckName, 95, 12, 11);
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByDeckId(deckId);
         assertThat(analytics).hasSize(1);
-        
+
         DeckAnalytics deckAnalytics = analytics.get(0);
         assertThat(deckAnalytics.getHighestScore()).isEqualTo(95);
-        assertThat(deckAnalytics.getPreviousScore()).isEqualTo(95); 
+        assertThat(deckAnalytics.getPreviousScore()).isEqualTo(95);
         assertThat(deckAnalytics.getReviewSessions()).hasSize(2);
     }
 
@@ -140,10 +140,10 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(deckId, userId2, deckName, 90, 12, 11);
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByDeckId(deckId);
-        
+
         assertThat(analytics).hasSize(2);
         assertThat(analytics).extracting(DeckAnalytics::getDeckId)
-                           .containsOnly(deckId);
+                .containsOnly(deckId);
     }
 
     @Test
@@ -163,10 +163,10 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(deckId2, userId, "Deck 2", 90, 15, 14);
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByUserId(userId);
-        
+
         assertThat(analytics).hasSize(2);
         assertThat(analytics).extracting(DeckAnalytics::getUserId)
-                           .containsOnly(userId);
+                .containsOnly(userId);
     }
 
     @Test
@@ -188,7 +188,7 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(deckId3, userId, "Deck 3", 80, 12, 10);
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByUserIdOrderByScore(userId);
-        
+
         assertThat(analytics).hasSize(3);
         // Should be ordered by highest score descending
         assertThat(analytics.get(0).getHighestScore()).isEqualTo(95);
@@ -218,12 +218,12 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(nonProficientDeckId, userId, "Non-Proficient Deck", 60, 10, 6);
 
         List<DeckAnalytics> proficientDecks = deckAnalyticsService.getProficientDecks(userId);
-        
+
         // Filter to only proficient decks
         List<DeckAnalytics> actualProficientDecks = proficientDecks.stream()
-            .filter(DeckAnalytics::isProficiency)
-            .toList();
-        
+                .filter(DeckAnalytics::isProficiency)
+                .toList();
+
         assertThat(actualProficientDecks).isNotEmpty();
         assertThat(actualProficientDecks).allMatch(DeckAnalytics::isProficiency);
     }
@@ -246,10 +246,10 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(deckId, userId2, deckName, 90, 12, 11);
 
         List<ReviewSession> sessions = deckAnalyticsService.getReviewSessionsByDeckId(deckId);
-        
+
         assertThat(sessions).hasSize(2);
         assertThat(sessions).extracting(ReviewSession::getDeckId)
-                          .containsOnly(deckId);
+                .containsOnly(deckId);
     }
 
     @Test
@@ -269,10 +269,10 @@ public class DeckAnalyticsServiceIntegrationTest {
         deckAnalyticsService.createReviewSession(deckId2, userId, "Deck 2", 85, 12, 10);
 
         List<ReviewSession> sessions = deckAnalyticsService.getReviewSessionsByUserId(userId);
-        
+
         assertThat(sessions).hasSize(2);
         assertThat(sessions).extracting(ReviewSession::getUserId)
-                          .containsOnly(userId);
+                .containsOnly(userId);
     }
 
     @Test
@@ -290,19 +290,19 @@ public class DeckAnalyticsServiceIntegrationTest {
 
         // Create first session
         deckAnalyticsService.createReviewSession(deckId, userId, deckName, 80, 10, 8);
-        
+
         // Wait a moment to ensure different timestamps
         try {
             Thread.sleep(10);
-        } catch (InterruptedException e) { 
+        } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
-        
+
         // Create second session (should be latest)
         ReviewSession secondSession = deckAnalyticsService.createReviewSession(deckId, userId, deckName, 85, 12, 10);
 
         ReviewSession latestSession = deckAnalyticsService.getLatestReviewSession(deckId);
-        
+
         assertThat(latestSession).isNotNull();
         assertThat(latestSession.getId()).isEqualTo(secondSession.getId());
         assertThat(latestSession.getScore()).isEqualTo(85);
@@ -359,7 +359,7 @@ public class DeckAnalyticsServiceIntegrationTest {
         // Create analytics for user to delete
         deckAnalyticsService.createReviewSession(deckId1, userId, "Deck 1", 80, 10, 8);
         deckAnalyticsService.createReviewSession(deckId2, userId, "Deck 2", 85, 12, 10);
-        
+
         // Create analytics for other user (should not be deleted)
         deckAnalyticsService.createReviewSession(deckId1, otherUserId, "Deck 1", 90, 15, 13);
 
@@ -367,7 +367,7 @@ public class DeckAnalyticsServiceIntegrationTest {
         List<DeckAnalytics> userAnalytics = deckAnalyticsService.getAnalyticsByUserId(userId);
         List<ReviewSession> userSessions = deckAnalyticsService.getReviewSessionsByUserId(userId);
         List<DeckAnalytics> otherUserAnalytics = deckAnalyticsService.getAnalyticsByUserId(otherUserId);
-        
+
         assertThat(userAnalytics).hasSize(2);
         assertThat(userSessions).hasSize(2);
         assertThat(otherUserAnalytics).hasSize(1);
@@ -379,7 +379,7 @@ public class DeckAnalyticsServiceIntegrationTest {
         List<DeckAnalytics> userAnalyticsAfterDelete = deckAnalyticsService.getAnalyticsByUserId(userId);
         List<ReviewSession> userSessionsAfterDelete = deckAnalyticsService.getReviewSessionsByUserId(userId);
         List<DeckAnalytics> otherUserAnalyticsAfterDelete = deckAnalyticsService.getAnalyticsByUserId(otherUserId);
-        
+
         assertThat(userAnalyticsAfterDelete).isEmpty();
         assertThat(userSessionsAfterDelete).isEmpty();
         assertThat(otherUserAnalyticsAfterDelete).hasSize(1);
@@ -406,7 +406,7 @@ public class DeckAnalyticsServiceIntegrationTest {
 
         List<DeckAnalytics> analytics = deckAnalyticsService.getAnalyticsByDeckId(deckId);
         assertThat(analytics).hasSize(1);
-        
+
         DeckAnalytics deckAnalytics = analytics.get(0);
         // Proficiency should be determined based on consistent high scores
         // The actual logic depends on your updateProficiency method implementation

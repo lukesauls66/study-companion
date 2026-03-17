@@ -48,14 +48,14 @@ class UserTest {
     @Test
     void testGettersAndSetters() {
         User user = new User();
-        
+
         user.setName(name);
         user.setUsername(username);
         user.setEmail(email);
         user.setPassword(password);
         user.setRole(Role.ADMIN);
         user.setVerified(true);
-        
+
         assertEquals(name, user.getName());
         assertEquals(username, user.getUsername());
         assertEquals(email, user.getEmail());

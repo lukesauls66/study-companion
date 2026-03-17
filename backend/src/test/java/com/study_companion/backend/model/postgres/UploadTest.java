@@ -10,10 +10,9 @@ import com.study_companion.backend.model.ParsingStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 @ExtendWith(MockitoExtension.class)
 public class UploadTest {
-    
+
     @Mock
     private Deck mockDeck;
     private User mockUser;
@@ -68,7 +67,7 @@ public class UploadTest {
     @Test
     void testGettersAndSetters() {
         Upload upload = new Upload();
-        
+
         upload.setUser(mockUser);
         upload.setDeck(mockDeck);
         upload.setFileName(fileName);
@@ -76,7 +75,7 @@ public class UploadTest {
         upload.setFileType(fileType);
         upload.setFileSize(fileSize);
         upload.setErrorMessage(errorMessage);
-        
+
         assertEquals(mockUser, upload.getUser());
         assertEquals(mockDeck, upload.getDeck());
         assertEquals(fileName, upload.getFileName());
@@ -114,14 +113,14 @@ public class UploadTest {
     @Test
     void testFileTypeEnumValues() {
         Upload upload = new Upload();
-        
+
         upload.setFileType(FileType.JPG);
         assertEquals(FileType.JPG, upload.getFileType());
-        
+
         upload.setFileType(FileType.JPEG);
         assertEquals(FileType.JPEG, upload.getFileType());
-        
+
         upload.setFileType(FileType.PNG);
         assertEquals(FileType.PNG, upload.getFileType());
-    }   
+    }
 }

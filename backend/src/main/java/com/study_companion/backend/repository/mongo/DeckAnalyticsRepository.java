@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import com.study_companion.backend.model.mongo.DeckAnalytics;
 
 public interface DeckAnalyticsRepository extends MongoRepository<DeckAnalytics, UUID> {
-    
+
     /**
      * Find all deck analytics based by deck ID
      */
@@ -15,7 +15,8 @@ public interface DeckAnalyticsRepository extends MongoRepository<DeckAnalytics, 
 
     /**
      * Find deck analytics by deck ID and user ID
-     * Returns at most one record since there should be only one analytics record per user-deck combination
+     * Returns at most one record since there should be only one analytics record
+     * per user-deck combination
      */
     Optional<DeckAnalytics> findByDeckIdAndUserId(UUID deckId, UUID userId);
 
@@ -35,7 +36,8 @@ public interface DeckAnalyticsRepository extends MongoRepository<DeckAnalytics, 
     List<DeckAnalytics> findByUserId(UUID userId);
 
     /**
-     * Find all deck analytics based on user ID based on highest score in descending order
+     * Find all deck analytics based on user ID based on highest score in descending
+     * order
      */
     List<DeckAnalytics> findByUserIdOrderByHighestScoreDesc(UUID userId);
 

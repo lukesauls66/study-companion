@@ -71,10 +71,10 @@ public class GlobalExceptionHandler {
 
     // 401 - Unauthorized
     @ExceptionHandler(AuthenticationException.class)
-public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
-    return ResponseEntity.status(401)
-            .body(new ErrorResponse("Invalid credentials", true));
-}
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
+        return ResponseEntity.status(401)
+                .body(new ErrorResponse("Invalid credentials", true));
+    }
 
     // 403 - Forbidden
     @ExceptionHandler({ UnauthorizedUserAccessException.class, UnauthorizedDeckAccessException.class,

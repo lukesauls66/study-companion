@@ -25,6 +25,7 @@ import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessExceptio
 import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.Upload;
 import com.study_companion.backend.model.postgres.User;
+import com.study_companion.backend.repository.postgres.DeckRepository;
 import com.study_companion.backend.repository.postgres.UploadRepository;
 import com.study_companion.backend.repository.postgres.UserRepository;
 
@@ -40,11 +41,15 @@ public class UploadService {
 
     private final UserRepository userRepository;
 
+    private final DeckRepository deckRepository;
+
     private final DeckService deckService;
 
-    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckService deckService) {
+    UploadService(UploadRepository uploadRepository, UserRepository userRepository, DeckRepository deckRepository,
+            DeckService deckService) {
         this.uploadRepository = uploadRepository;
         this.userRepository = userRepository;
+        this.deckRepository = deckRepository;
         this.deckService = deckService;
     }
 
@@ -75,7 +80,7 @@ public class UploadService {
      * @throws UserOperationException            if user operations fail
      * @throws UploadOperationException          if server error occurs
      */
-    public Upload createUpload(UploadDto.Create uploadDto,
+    public UploadDto.GetResponse createUpload(UploadDto.CreateRequest uploadDto,
             Long fileSize, UUID requestingUserId) {
         if (uploadDto == null) {
             throw new InvalidUploadParameterException("Upload data transfer object cannot be null");
@@ -109,7 +114,8 @@ public class UploadService {
 
             User user = userRepository.findById(uploadDto.userId())
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
-            Deck deck = deckService.getDeckById(uploadDto.deckId());
+            Deck deck = deckRepository.findById(uploadDto.deckId())
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + uploadDto.deckId() + " not found"));
 
             logger.debug("Verifying that the requesting user can upload files to this deck");
             if (!deck.getUser().getId().equals(uploadDto.userId())) {
@@ -131,7 +137,7 @@ public class UploadService {
             deck.addUpload(upload);
             logger.info("Successfully added upload to parents");
 
-            return newUpload;
+            return convertToDto(newUpload);
         } catch (UserException | DeckException e) {
             logger.error("Upload creation failed: {}", e.getMessage());
             throw e;
@@ -153,7 +159,7 @@ public class UploadService {
      * @throws UploadNotFoundException         if no upload exists with the given ID
      * @throws UploadOperationException        if server error occurs
      */
-    public Upload getUploadById(UUID id) {
+    public UploadDto.GetResponse getUploadById(UUID id) {
         if (id == null) {
             throw new InvalidUploadParameterException("id cannot be null");
         }
@@ -165,8 +171,23 @@ public class UploadService {
             }
 
             logger.debug("Fetching upload");
-            Upload upload = uploadRepository.findById(id).get();
+            UploadDto.GetResponse upload = convertToDto(uploadRepository.findById(id).get());
             logger.info("Successfully fetched upload");
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedDeckAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is admin");
+            if (!isAdmin && !upload.userId().equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+            }
+
             return upload;
         } catch (UploadException e) {
             logger.error("Upload fetch failed: {}", e.getMessage());
@@ -185,7 +206,7 @@ public class UploadService {
      * @throws UnauthorizedUploadAccessException if requesting user is not an admin
      * @throws UploadOperationException          if server error occurs
      */
-    public List<Upload> getAllUploads() {
+    public List<UploadDto.GetResponse> getAllUploads() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -202,7 +223,7 @@ public class UploadService {
             }
 
             logger.debug("Fetching all uploads");
-            List<Upload> uploads = uploadRepository.findAll();
+            List<UploadDto.GetResponse> uploads = uploadRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all uploads");
             return uploads;
         } catch (UploadException e) {
@@ -222,14 +243,29 @@ public class UploadService {
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws UploadOperationException        if server error occurs
      */
-    public List<Upload> getAllUserUploads(UUID userId) {
+    public List<UploadDto.GetResponse> getAllUserUploads(UUID userId) {
         if (userId == null) {
             throw new InvalidUploadParameterException("userId cannot be null");
         }
 
         try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null) {
+                throw new UnauthorizedDeckAccessException("Authentication required");
+            }
+
+            boolean isAdmin = authentication.getAuthorities().stream()
+                    .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
+
+            logger.debug("Checking if user is authorized");
+            if (!isAdmin && !userId.equals(UUID.fromString(authentication.getName()))) {
+                throw new UnauthorizedDeckAccessException("Unauthorized user access");
+            }
+
             logger.debug("Fetching all uploads belonging to the provided user");
-            List<Upload> userUploads = uploadRepository.findByUserId(userId);
+            List<UploadDto.GetResponse> userUploads = uploadRepository.findByUserId(userId).stream()
+                    .map(this::convertToDto).toList();
             logger.info("Successfully fetched all uploads belonging to the provided user");
             return userUploads;
         } catch (Exception e) {
@@ -246,30 +282,33 @@ public class UploadService {
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws UploadOperationException        if server error occurs
      */
-    public List<Upload> getAllDeckUploads(UUID deckId) {
+    public List<UploadDto.GetResponse> getAllDeckUploads(UUID deckId) {
         if (deckId == null) {
             throw new InvalidUploadParameterException("deckId cannot be null");
         }
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            
+
             if (authentication == null) {
                 throw new UnauthorizedUserAccessException("Authentication required");
             }
 
-            logger.debug("Fetching all uploads belonging to the provided deck");
-            List<Upload> uploads = uploadRepository.findByDeckId(deckId);
-            logger.info("Successfully fetched all uploads belonging to the provided deck");
+            Deck deck = deckRepository.findById(deckId).orElseThrow(() -> new DeckNotFoundException("Deck not found"));
 
             boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or upload owner");
-            if (!isAdmin && !uploads.get(0).getUser().getId().equals(UUID.fromString(authentication.getName()))) {
+            if (!isAdmin && !deck.getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
-            
+
+            logger.debug("Fetching all uploads belonging to the provided deck");
+            List<UploadDto.GetResponse> uploads = uploadRepository.findByDeckId(deckId).stream().map(this::convertToDto)
+                    .toList();
+            logger.info("Successfully fetched all uploads belonging to the provided deck");
+
             return uploads;
         } catch (Exception e) {
             logger.error("Failed to fetch all uploads belonging to the provided deck: {}", e.getMessage());
@@ -285,7 +324,7 @@ public class UploadService {
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws UploadOperationException        if server error occurs
      */
-    public long getCountOfAllUserUploads(UUID userId) {
+    public Long getCountOfAllUserUploads(UUID userId) {
         if (userId == null) {
             throw new InvalidUploadParameterException("userId cannot be null");
         }
@@ -309,7 +348,7 @@ public class UploadService {
      * @throws InvalidUploadParameterException if any nonnull arg is null
      * @throws UploadOperationException        if server error occurs
      */
-    public long getCountOfAllDeckUploads(UUID deckId) {
+    public Long getCountOfAllDeckUploads(UUID deckId) {
         if (deckId == null) {
             throw new InvalidUploadParameterException("deckId cannot be null");
         }
@@ -340,7 +379,7 @@ public class UploadService {
      *                                           upload owner
      * @throws UploadOperationException          if server error occurs
      */
-    public Upload startParsingUpload(UUID uploadId, UUID requestingUserId) {
+    public UploadDto.GetResponse startParsingUpload(UUID uploadId, UUID requestingUserId) {
         if (uploadId == null) {
             throw new InvalidUploadParameterException("uploadId cannot be null");
         }
@@ -350,7 +389,8 @@ public class UploadService {
         }
 
         try {
-            Upload upload = getUploadById(uploadId);
+            Upload upload = uploadRepository.findById(uploadId)
+                    .orElseThrow(() -> new UploadNotFoundException("Upload not found"));
 
             logger.debug("Verifying requesting user is authorized to perform this action");
             if (!upload.getUser().getId().equals(requestingUserId)) {
@@ -361,7 +401,7 @@ public class UploadService {
             upload.startParsing();
             Upload updatedUpload = uploadRepository.save(upload);
             logger.info("Successfully started parsing process");
-            return updatedUpload;
+            return convertToDto(updatedUpload);
         } catch (UploadException e) {
             logger.error("Parsing upload failed: {}", e.getMessage());
             throw e;
@@ -385,7 +425,7 @@ public class UploadService {
      *                                           upload owner
      * @throws UploadOperationException          if server error occurs
      */
-    public Upload completeParsingUpload(UUID uploadId, UUID requestingUserId) {
+    public UploadDto.GetResponse completeParsingUpload(UUID uploadId, UUID requestingUserId) {
         if (uploadId == null) {
             throw new InvalidUploadParameterException("uploadId cannot be null");
         }
@@ -395,7 +435,8 @@ public class UploadService {
         }
 
         try {
-            Upload upload = getUploadById(uploadId);
+            Upload upload = uploadRepository.findById(uploadId)
+                    .orElseThrow(() -> new UploadNotFoundException("Upload not found"));
 
             logger.debug("Verifying requesting user is authorized to perform this action");
             if (!upload.getUser().getId().equals(requestingUserId)) {
@@ -406,7 +447,7 @@ public class UploadService {
             upload.completeParsing();
             Upload completedUpload = uploadRepository.save(upload);
             logger.info("Successfully completed parsing process");
-            return completedUpload;
+            return convertToDto(completedUpload);
         } catch (UploadException e) {
             logger.error("Parsing upload failed: {}", e.getMessage());
             throw e;
@@ -433,7 +474,7 @@ public class UploadService {
      * @throws UploadOperationException          if server error occurs
      * 
      */
-    public Upload failParsingUpload(UUID uploadId, String errorMessage,
+    public UploadDto.GetResponse failParsingUpload(UUID uploadId, String errorMessage,
             UUID requestingUserId) {
         if (uploadId == null) {
             throw new InvalidUploadParameterException("uploadId cannot be null");
@@ -448,7 +489,8 @@ public class UploadService {
         }
 
         try {
-            Upload upload = getUploadById(uploadId);
+            Upload upload = uploadRepository.findById(uploadId)
+                    .orElseThrow(() -> new UploadNotFoundException("Upload not found"));
 
             logger.debug("Verifying requesting user is authorized to perform this action");
             if (!upload.getUser().getId().equals(requestingUserId)) {
@@ -459,7 +501,7 @@ public class UploadService {
             upload.failParsing(errorMessage);
             Upload failedUpload = uploadRepository.save(upload);
             logger.info("Successfully assigned parsing process as failed with error message");
-            return failedUpload;
+            return convertToDto(failedUpload);
         } catch (UploadException e) {
             logger.error("Failed to assign parsing status as failed with error message: {}", e.getMessage());
             throw e;
@@ -493,7 +535,8 @@ public class UploadService {
         }
 
         try {
-            Upload upload = getUploadById(uploadId);
+            Upload upload = uploadRepository.findById(uploadId)
+                    .orElseThrow(() -> new UploadNotFoundException("Upload not found"));
 
             logger.debug("Verifying requesting user is authorized to perform this action");
             if (!upload.getUser().getId().equals(requestingUserId)) {
@@ -620,7 +663,8 @@ public class UploadService {
                 throw new UnauthorizedUploadAccessException("Admin access required");
             }
 
-            Deck deck = deckService.getDeckById(deckId);
+            Deck deck = deckRepository.findById(deckId)
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + deckId + " not found"));
 
             logger.debug("Fetching all uploads belonging to the provided deck");
             List<Upload> uploads = uploadRepository.findByDeckId(deckId);
@@ -647,5 +691,12 @@ public class UploadService {
             logger.error("Failed to delete all uploads belonging to provided deck: {}", e.getMessage());
             throw new UploadOperationException("Failed to delete all uploads belonging to provided deck", e);
         }
+    }
+
+    private UploadDto.GetResponse convertToDto(Upload upload) {
+        return new UploadDto.GetResponse(upload.getId(), upload.getUser().getId(), upload.getDeck().getId(),
+                upload.getFileName(), upload.getFileUrl(), upload.getFileType(), upload.getIsParsed(),
+                upload.getParsingStatus(), upload.getErrorMessage(), upload.getParsingStartedAt(),
+                upload.getParsingCompletedAt(), upload.getCreatedAt(), upload.getUpdatedAt());
     }
 }

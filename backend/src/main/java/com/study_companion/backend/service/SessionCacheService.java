@@ -18,37 +18,39 @@ import java.util.UUID;
 
 @Service
 public class SessionCacheService {
-    
+
     private static final Logger logger = LoggerFactory.getLogger(SessionCacheService.class);
-    
+
     private final SessionRepository sessionRepository;
-    
+
     private final CachedDecksRepository cachedDecksRepository;
 
     SessionCacheService(SessionRepository sessionRepository, CachedDecksRepository cachedDecksRepository) {
         this.sessionRepository = sessionRepository;
         this.cachedDecksRepository = cachedDecksRepository;
     }
-    
+
     /**
      * Creates a new session for a user.
      * If a session already exists, it will be replaced.
      * 
-     * @param userId the UUID of the user to create a session for
-     * @param ttlSeconds the number of seconds until session expires, or null for default 24-hour expiration
+     * @param userId     the UUID of the user to create a session for
+     * @param ttlSeconds the number of seconds until session expires, or null for
+     *                   default 24-hour expiration
      * @return the created session
-     * @throws InvalidSessionParameterException if userId is null or ttlSeconds is invalid
-     * @throws SessionOperationException if Redis operation fails
+     * @throws InvalidSessionParameterException if userId is null or ttlSeconds is
+     *                                          invalid
+     * @throws SessionOperationException        if Redis operation fails
      */
     public Session createSession(UUID userId, Long ttlSeconds) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when creating a session");
         }
-        
+
         if (ttlSeconds != null && ttlSeconds <= 0) {
             throw new InvalidSessionParameterException("TTL must be positive when specified, got: " + ttlSeconds);
         }
-        
+
         try {
             logger.debug("Creating session for user ID: {}", userId);
             Session session = ttlSeconds != null ? new Session(userId, ttlSeconds) : new Session(userId);
@@ -67,31 +69,31 @@ public class SessionCacheService {
      * If no cached decks exist, creates a new cache entry.
      * This improves performance by storing frequently accessed deck data in Redis.
      * 
-     * @param userId the UUID of the user whose decks to cache
+     * @param userId     the UUID of the user whose decks to cache
      * @param deckCaches the list of deck cache objects to store
      * @return the created or updated cached decks
      * @throws InvalidSessionParameterException if userId is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public CachedDecks createOrUpdateCachedDecks(UUID userId, List<DeckCache> deckCaches) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when caching decks");
         }
-        
+
         try {
             logger.debug("Creating or updating cached decks for user ID: {}", userId);
             Optional<CachedDecks> existingCache = cachedDecksRepository.findById(userId);
-            
+
             if (existingCache.isPresent()) {
                 CachedDecks cachedDecks = existingCache.get();
-                
+
                 cachedDecks.getDecks().clear();
                 if (deckCaches != null) {
                     for (DeckCache deckCache : deckCaches) {
                         cachedDecks.addDeck(deckCache);
                     }
                 }
-                
+
                 CachedDecks savedCache = cachedDecksRepository.save(cachedDecks);
                 logger.info("Successfully updated cached decks for user {}", userId);
                 return savedCache;
@@ -112,33 +114,33 @@ public class SessionCacheService {
      * If the deck doesn't exist in cache, adds it.
      * If no cache exists for user, creates new cache with this deck.
      * 
-     * @param userId the UUID of the user whose deck cache to update
-     * @param deckId the UUID of the specific deck to update
+     * @param userId           the UUID of the user whose deck cache to update
+     * @param deckId           the UUID of the specific deck to update
      * @param updatedDeckCache the new deck cache data to replace the existing deck
      * @return the updated cached decks
      * @throws InvalidSessionParameterException if any required parameter is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public CachedDecks updateSpecificDeckInCache(UUID userId, UUID deckId, DeckCache updatedDeckCache) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when updating deck cache");
         }
-        
+
         if (deckId == null) {
             throw new InvalidSessionParameterException("Deck ID cannot be null when updating deck cache");
         }
-        
+
         if (updatedDeckCache == null) {
             throw new InvalidSessionParameterException("Updated deck cache cannot be null");
         }
-        
+
         try {
             logger.debug("Updating specific deck {} in cache for user {}", deckId, userId);
             Optional<CachedDecks> existingCache = cachedDecksRepository.findById(userId);
-            
+
             if (existingCache.isPresent()) {
                 CachedDecks cachedDecks = existingCache.get();
-                
+
                 DeckCache existingDeck = cachedDecks.findDeckById(deckId);
                 if (existingDeck != null) {
                     cachedDecks.updateDeck(updatedDeckCache);
@@ -147,7 +149,7 @@ public class SessionCacheService {
                     cachedDecks.addDeck(updatedDeckCache);
                     logger.debug("Added new deck {} to cache", deckId);
                 }
-                
+
                 CachedDecks savedCache = cachedDecksRepository.save(cachedDecks);
                 logger.info("Successfully updated deck {} in cache for user {}", deckId, userId);
                 return savedCache;
@@ -171,21 +173,21 @@ public class SessionCacheService {
      * @param deckId the UUID of the deck to remove from cache
      * @return the updated cached decks, or null if no cache exists
      * @throws InvalidSessionParameterException if userId or deckId is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public CachedDecks removeSingleDeckFromCache(UUID userId, UUID deckId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when removing deck from cache");
         }
-        
+
         if (deckId == null) {
             throw new InvalidSessionParameterException("Deck ID cannot be null when removing deck from cache");
         }
-        
+
         try {
             logger.debug("Removing deck {} from cache for user {}", deckId, userId);
             Optional<CachedDecks> existingCache = cachedDecksRepository.findById(userId);
-            
+
             if (existingCache.isPresent()) {
                 CachedDecks cachedDecks = existingCache.get();
                 cachedDecks.removeDeck(deckId);
@@ -193,7 +195,7 @@ public class SessionCacheService {
                 logger.info("Successfully removed deck {} from cache for user {}", deckId, userId);
                 return savedCache;
             }
-            
+
             logger.debug("No cache found for user {} when trying to remove deck {}", userId, deckId);
             return null;
         } catch (Exception e) {
@@ -206,21 +208,21 @@ public class SessionCacheService {
      * Refreshes cached decks for a user by fetching fresh data.
      * Useful when user creates/deletes decks and cache needs to be updated.
      * 
-     * @param userId the UUID of the user whose deck cache to refresh
+     * @param userId     the UUID of the user whose deck cache to refresh
      * @param deckCaches the updated list of deck cache objects
      * @return the refreshed cached decks, or creates new cache if none exists
      * @throws InvalidSessionParameterException if userId is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public CachedDecks refreshCachedDecks(UUID userId, List<DeckCache> deckCaches) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when refreshing deck cache");
         }
-        
+
         try {
             logger.debug("Refreshing cached decks for user {}", userId);
             cachedDecksRepository.deleteById(userId);
-            
+
             CachedDecks cachedDecks = new CachedDecks(userId, deckCaches);
             CachedDecks savedCache = cachedDecksRepository.save(cachedDecks);
             logger.info("Successfully refreshed cached decks for user {}", userId);
@@ -233,17 +235,18 @@ public class SessionCacheService {
 
     /**
      * Invalidates (deletes) cached decks for a user.
-     * Useful when user makes significant changes and cache should be rebuilt on next access.
+     * Useful when user makes significant changes and cache should be rebuilt on
+     * next access.
      * 
      * @param userId the UUID of the user whose deck cache to invalidate
      * @throws InvalidSessionParameterException if userId is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public void invalidateCachedDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when invalidating deck cache");
         }
-        
+
         try {
             logger.debug("Invalidating cached decks for user {}", userId);
             cachedDecksRepository.deleteById(userId);
@@ -259,30 +262,32 @@ public class SessionCacheService {
      * Only works if the session is currently valid.
      * Updates the last accessed time and extends session expiration.
      * 
-     * @param userId the UUID of the user whose session to refresh
+     * @param userId            the UUID of the user whose session to refresh
      * @param additionalSeconds the number of seconds to extend the session
      * @return true if session was refreshed, false if no valid session exists
-     * @throws InvalidSessionParameterException if userId is null or additionalSeconds is invalid
-     * @throws SessionOperationException if Redis operation fails
+     * @throws InvalidSessionParameterException if userId is null or
+     *                                          additionalSeconds is invalid
+     * @throws SessionOperationException        if Redis operation fails
      */
     public boolean refreshSession(UUID userId, long additionalSeconds) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when refreshing session");
         }
-        
+
         if (additionalSeconds <= 0) {
-            throw new InvalidSessionParameterException("Additional seconds must be positive, got: " + additionalSeconds);
+            throw new InvalidSessionParameterException(
+                    "Additional seconds must be positive, got: " + additionalSeconds);
         }
-        
+
         try {
             logger.debug("Refreshing session for user {} with {} additional seconds", userId, additionalSeconds);
             Optional<Session> sessionOpt = sessionRepository.findByUserId(userId);
-            
+
             if (sessionOpt.isEmpty() || sessionOpt.get().isExpired()) {
                 logger.debug("No valid session found for user {} to refresh", userId);
                 return false;
             }
-            
+
             Session session = sessionOpt.get();
             session.setLastAccessedAt();
             session.extendSession(additionalSeconds);
@@ -303,22 +308,22 @@ public class SessionCacheService {
      * @param userId the UUID of the user whose session to refresh
      * @return true if session was refreshed, false if no valid session exists
      * @throws InvalidSessionParameterException if userId is null
-     * @throws SessionOperationException if Redis operation fails
+     * @throws SessionOperationException        if Redis operation fails
      */
     public boolean refreshSession(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when refreshing session");
         }
-        
+
         try {
             logger.debug("Refreshing session for user {} with default extension", userId);
             Optional<Session> sessionOpt = sessionRepository.findByUserId(userId);
-            
+
             if (sessionOpt.isEmpty() || sessionOpt.get().isExpired()) {
                 logger.debug("No valid session found for user {} to refresh", userId);
                 return false;
             }
-            
+
             Session session = sessionOpt.get();
             session.setLastAccessedAt();
             session.extendSession();
@@ -337,13 +342,13 @@ public class SessionCacheService {
      * 
      * @param userId the UUID of the user to log out
      * @throws InvalidSessionParameterException if userId is null
-     * @throws SessionOperationException if Redis operation fails
+     * @throws SessionOperationException        if Redis operation fails
      */
     public void clearSessionAndCachedDecks(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when logging out");
         }
-        
+
         try {
             logger.debug("Logging out user {}", userId);
             sessionRepository.deleteByUserId(userId);
@@ -354,25 +359,27 @@ public class SessionCacheService {
             throw new SessionOperationException("Failed to logout user: " + userId, e);
         }
     }
-    
+
     /**
-     * Validates a user's session and performs cleanup if session is invalid or expired.
-     * Automatically removes orphaned cache data when session is not found or expired.
+     * Validates a user's session and performs cleanup if session is invalid or
+     * expired.
+     * Automatically removes orphaned cache data when session is not found or
+     * expired.
      * 
      * @param userId the UUID of the user whose session to validate
      * @return true if user has valid, non-expired session; false otherwise
      * @throws InvalidSessionParameterException if userId is null
-     * @throws SessionOperationException if Redis operation fails
+     * @throws SessionOperationException        if Redis operation fails
      */
     private boolean validateSessionAndCleanupCache(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when validating session");
         }
-        
+
         try {
             logger.debug("Validating session and cleaning up cache for user {}", userId);
             Optional<Session> session = sessionRepository.findByUserId(userId);
-            
+
             if (session.isEmpty()) {
                 logger.debug("No session found for user {}, cleaning up cache", userId);
                 cachedDecksRepository.deleteById(userId);
@@ -383,7 +390,7 @@ public class SessionCacheService {
                 cachedDecksRepository.deleteById(userId);
                 return false;
             }
-            
+
             logger.debug("Valid session found for user {}", userId);
             return true;
         } catch (Exception e) {
@@ -391,7 +398,7 @@ public class SessionCacheService {
             throw new SessionOperationException("Failed to validate session for user: " + userId, e);
         }
     }
-    
+
     /**
      * Retrieves a user's cached decks only if they have a valid session.
      * Performs session validation first and returns empty if session is invalid.
@@ -400,20 +407,20 @@ public class SessionCacheService {
      * @param userId the UUID of the user whose cached decks to retrieve
      * @return Optional containing cached decks if session is valid, empty otherwise
      * @throws InvalidSessionParameterException if userId is null
-     * @throws CacheOperationException if Redis operation fails
+     * @throws CacheOperationException          if Redis operation fails
      */
     public Optional<CachedDecks> getCachedDecksIfSessionValid(UUID userId) {
         if (userId == null) {
             throw new InvalidSessionParameterException("User ID cannot be null when retrieving cached decks");
         }
-        
+
         try {
             logger.debug("Retrieving cached decks for user {} with session validation", userId);
             if (!validateSessionAndCleanupCache(userId)) {
                 logger.debug("Session validation failed for user {}, returning empty", userId);
                 return Optional.empty();
             }
-            
+
             Optional<CachedDecks> cachedDecks = cachedDecksRepository.findById(userId);
             if (cachedDecks.isPresent()) {
                 logger.debug("Found cached decks for user {}", userId);

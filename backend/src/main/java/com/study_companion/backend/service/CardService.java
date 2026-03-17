@@ -25,6 +25,8 @@ import com.study_companion.backend.model.CardCreationType;
 import com.study_companion.backend.model.postgres.Card;
 import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.repository.postgres.CardRepository;
+import com.study_companion.backend.repository.postgres.DeckRepository;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,11 +37,11 @@ public class CardService {
 
     private final CardRepository cardRepository;
 
-    private final DeckService deckService;
+    private final DeckRepository deckRepository;
 
-    CardService(CardRepository cardRepository, DeckService deckService) {
+    CardService(CardRepository cardRepository, DeckRepository deckRepository) {
         this.cardRepository = cardRepository;
-        this.deckService = deckService;
+        this.deckRepository = deckRepository;
     }
 
     /**
@@ -63,7 +65,7 @@ public class CardService {
      * @throws DeckOperationException          if deck operations fail
      * @throws CardOperationException          if server error occurs
      */
-    public Card createCard(CardDto.Create cardDto, CardCreationType creationType,
+    public CardDto.GetResponse createCard(CardDto.CreateRequest cardDto, CardCreationType creationType,
             UUID requestingUserId) {
         if (cardDto == null) {
             throw new InvalidCardParameterException("Card data transfer object cannot be null");
@@ -86,7 +88,8 @@ public class CardService {
         }
 
         try {
-            Deck deck = deckService.getDeckById(cardDto.deckId());
+            Deck deck = deckRepository.findById(cardDto.deckId())
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + cardDto.deckId() + " not found"));
 
             logger.debug("Verifying that the requesting user can add cards to this deck: {}", deck.getTitle());
             if (!deck.getUser().getId().equals(requestingUserId)) {
@@ -108,7 +111,7 @@ public class CardService {
 
             Card newCard = cardRepository.save(card);
             logger.info("Successfully created new card and added to parent deck");
-            return newCard;
+            return convertToDto(newCard);
         } catch (DeckException e) {
             logger.error("Card creation failed: {}", e.getMessage());
             throw e;
@@ -127,14 +130,14 @@ public class CardService {
      * @throws CardNotFoundException         if no card exists with the given ID
      * @throws CardOperationException        if server error occurs
      */
-    public Card getCardById(UUID id) {
+    public CardDto.GetResponse getCardById(UUID id) {
         if (id == null) {
             throw new InvalidCardParameterException("id cannot be null");
         }
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            
+
             if (authentication == null) {
                 throw new UnauthorizedUserAccessException("Authentication required");
             }
@@ -155,7 +158,7 @@ public class CardService {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
 
-            return card;
+            return convertToDto(card);
         } catch (CardNotFoundException e) {
             logger.error("Card does not exist with provided id: {}", e.getMessage());
             throw e;
@@ -173,7 +176,7 @@ public class CardService {
      * @throws UnauthorizedCardAccessException if requesting user is not an admin
      * @throws CardOperationException          if server error occurs
      */
-    public List<Card> getAllCards() {
+    public List<CardDto.GetResponse> getAllCards() {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
@@ -190,7 +193,7 @@ public class CardService {
             }
 
             logger.debug("Searching for all cards");
-            List<Card> cards = cardRepository.findAll();
+            List<CardDto.GetResponse> cards = cardRepository.findAll().stream().map(this::convertToDto).toList();
             logger.info("Successfully fetched all cards");
             return cards;
         } catch (CardException e) {
@@ -210,29 +213,33 @@ public class CardService {
      * @throws InvalidCardParameterException if any nonnull arg is null
      * @throws CardOperationException        if server error occurs
      */
-    public List<Card> getAllDeckCards(UUID deckId) {
+    public List<CardDto.GetResponse> getAllDeckCards(UUID deckId) {
         if (deckId == null) {
             throw new InvalidCardParameterException("deckId cannot be null");
         }
 
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            
+
             if (authentication == null) {
                 throw new UnauthorizedUserAccessException("Authentication required");
             }
 
-            logger.debug("Fetching all cards belonging to the provided deckId");
-            List<Card> cards = cardRepository.findByDeckId(deckId);
-            logger.info("Successfully fetched all cards belonging to the provided deckId");
+            Deck deck = deckRepository.findById(deckId).orElseThrow(() -> new DeckNotFoundException("Deck not found"));
 
             boolean isAdmin = authentication.getAuthorities().stream()
                     .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
             logger.debug("Checking if user is admin or card owner");
-            if (!isAdmin && !cards.get(0).getDeck().getUser().getId().equals(UUID.fromString(authentication.getName()))) {
+            if (!isAdmin
+                    && !deck.getUser().getId().equals(UUID.fromString(authentication.getName()))) {
                 throw new UnauthorizedUserAccessException("Unauthorized user access");
             }
+
+            logger.debug("Fetching all cards belonging to the provided deckId");
+            List<CardDto.GetResponse> cards = cardRepository.findByDeckId(deckId).stream().map(this::convertToDto)
+                    .toList();
+            logger.info("Successfully fetched all cards belonging to the provided deckId");
 
             return cards;
         } catch (Exception e) {
@@ -283,7 +290,7 @@ public class CardService {
      *                                         card/deck owner
      * @throws CardOperationException          if server error occurs
      */
-    public Card updateCard(UUID cardId, CardDto.Update cardDto, UUID requestingUserId) {
+    public CardDto.GetResponse updateCard(UUID cardId, CardDto.UpdateRequest cardDto, UUID requestingUserId) {
         if (cardId == null) {
             throw new InvalidCardParameterException("cardId cannot be null");
         }
@@ -305,7 +312,8 @@ public class CardService {
         }
 
         try {
-            Card existingCard = getCardById(cardId);
+            Card existingCard = cardRepository.findById(cardId)
+                    .orElseThrow(() -> new CardNotFoundException("Card not found"));
 
             logger.debug("Verifying request user is authorized to update this card");
             if (!existingCard.getDeck().getUser().getId().equals(requestingUserId)) {
@@ -327,7 +335,7 @@ public class CardService {
             logger.debug("Updating card");
             Card updatedCard = cardRepository.save(existingCard);
             logger.info("Successfully updated card");
-            return updatedCard;
+            return convertToDto(updatedCard);
         } catch (CardException e) {
             logger.error("Card update failed: {}", e.getMessage());
             throw e;
@@ -360,7 +368,8 @@ public class CardService {
         }
 
         try {
-            Card card = getCardById(cardId);
+            Card card = cardRepository.findById(cardId)
+                    .orElseThrow(() -> new CardNotFoundException("Card not found"));
 
             logger.debug("Verifying request user is authorized to delete this card");
             if (!card.getDeck().getUser().getId().equals(requestingUserId)) {
@@ -419,7 +428,8 @@ public class CardService {
                 throw new UnauthorizedCardAccessException("Unauthorized user access");
             }
 
-            Deck deck = deckService.getDeckById(deckId);
+            Deck deck = deckRepository.findById(deckId)
+                    .orElseThrow(() -> new DeckNotFoundException("Deck with ID " + deckId + " not found"));
 
             logger.debug("Clearing deck's cards");
             deck.getCards().clear();
@@ -437,5 +447,10 @@ public class CardService {
             logger.error("Failed to delete all cards from the provided deck: {}", e.getMessage());
             throw new CardOperationException("Failed to delete all cards from the provided deck", e);
         }
+    }
+
+    private CardDto.GetResponse convertToDto(Card card) {
+        return new CardDto.GetResponse(card.getId(), card.getDeck().getId(), card.getQuestion(), card.getAnswer(),
+                card.getImageUrl(), card.getCreationType(), card.getCreatedAt(), card.getUpdatedAt());
     }
 }

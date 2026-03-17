@@ -25,7 +25,8 @@ public class DeckAnalyticsService {
 
     private final ReviewSessionRepository reviewSessionRepository;
 
-    DeckAnalyticsService(DeckAnalyticsRepository deckAnalyticsRepository, ReviewSessionRepository reviewSessionRepository) {
+    DeckAnalyticsService(DeckAnalyticsRepository deckAnalyticsRepository,
+            ReviewSessionRepository reviewSessionRepository) {
         this.deckAnalyticsRepository = deckAnalyticsRepository;
         this.reviewSessionRepository = reviewSessionRepository;
     }

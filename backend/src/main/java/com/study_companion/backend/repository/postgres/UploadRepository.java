@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface UploadRepository extends JpaRepository<Upload, UUID> {
-    
+
     /**
      * Find all uploads belonging to a specific deck
      */
