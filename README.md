@@ -15,7 +15,7 @@ A modern, AI-powered study companion application that helps students create, man
 ### Tech Stack
 
 - **Frontend**: Next.js 16 with TypeScript, React 19, Tailwind CSS 4
-- **Backend**: Spring Boot 3.5.7 with Java 17-
+- **Backend**: Spring Boot 4.0.2 with Java 21
 - **Databases**:
   - PostgreSQL (Primary data: Users, Decks, Cards, Uploads)
   - MongoDB (Analytics: Study sessions, Deck analytics)
@@ -38,11 +38,11 @@ Users → Decks → Cards
 ```javascript
 // Flexible schema for analytics and session data
 DeckAnalytics: {
-  deckId, userId, scores, sessions, proficiency;
+  (deckId, userId, scores, sessions, proficiency);
 }
 
 ReviewSessions: {
-  date, deckName, score, cardsReviewed, correctAnswers;
+  (date, deckName, score, cardsReviewed, correctAnswers);
 }
 ```
 
@@ -52,14 +52,22 @@ ReviewSessions: {
 study-companion/
 ├── docker-compose.yml          # Multi-service orchestration
 ├── backend/                    # Spring Boot API
-│   ├── src/main/java/com/lukesauls/studycompanion/
-│   │   └── studycompanion_backend/
-│   │       ├── model/
-│   │       │   ├── postgres/   # JPA entities (User, Deck, Card, Upload)
-│   │       │   ├── mongo/      # MongoDB documents (Analytics, Sessions)
-│   │       │   └── enums/      # Shared enums (FileType, ParsingStatus, etc.)
-│   │       └── repository/     # Data access layers
-│   └── pom.xml                # Maven dependencies
+│   ├── src/main/java/com/study_companion/backend/
+│   │   ├── controller/         # REST API controllers
+│   │   │   ├── auth/          # Authentication endpoints
+│   │   │   ├── postgres/      # PostgreSQL entity controllers
+│   │   │   ├── mongo/         # MongoDB analytics controllers
+│   │   │   └── redis/         # Redis cache controllers
+│   │   ├── model/
+│   │   │   ├── postgres/      # JPA entities (User, Deck, Card, Upload)
+│   │   │   ├── mongo/         # MongoDB documents (Analytics, Sessions)
+│   │   │   └── redis/         # Redis cache models
+│   │   ├── service/           # Business logic layer
+│   │   ├── repository/        # Data access layers
+│   │   ├── config/            # Security and database configuration
+│   │   ├── dto/               # Data transfer objects
+│   │   └── exception/         # Custom exceptions and global handler
+│   └── pom.xml               # Maven dependencies
 └── frontend/                  # Next.js application
     ├── app/                   # App router pages
     ├── lib/                   # API utilities
@@ -71,7 +79,7 @@ study-companion/
 ### Prerequisites
 
 - Docker & Docker Compose
-- Java 17+ (for local development)
+- Java 21+ (for local development)
 - Node.js 18+ (for local development)
 
 ### Quick Start with Docker
@@ -157,35 +165,43 @@ public class DeckAnalytics {
 
 ### Environment Variables
 
-#### Required Configuration
+#### Docker Development Configuration
 
-Copy `.env.example` to `.env` and configure with your values:
+All configuration is handled through Docker environment variables in `docker-compose.yml`:
 
-```env
-# Database Configuration
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/studydb
-SPRING_DATASOURCE_USERNAME=your_db_username
-SPRING_DATASOURCE_PASSWORD=your_db_password
-MONGO_URI=mongodb://localhost:27017/studylogs
-REDIS_HOST=localhost
+```yaml
+backend:
+  environment:
+    SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/studydb
+    SPRING_DATASOURCE_USERNAME: user
+    SPRING_DATASOURCE_PASSWORD: password
+    MONGO_URI: mongodb://mongo:27017/studylogs
+    REDIS_HOST: redis
 
-# Frontend Configuration
-NEXT_PUBLIC_API_URL=http://localhost:8080
+frontend:
+  environment:
+    NEXT_PUBLIC_API_URL: http://localhost:8080
 ```
 
-#### Docker Development
+#### Application Properties
 
-The `docker-compose.yml` uses default development credentials that are safe for local development only.
+Minimal configuration in `application.properties`:
+
+```properties
+spring.application.name=backend
+spring.servlet.multipart.max-file-size=10MB
+spring.servlet.multipart.max-request-size=10MB
+```
 
 #### Production Deployment
 
 - Use strong, unique passwords for all services
-- Generate secure JWT secrets (min 256-bit)
 - Configure cloud storage (AWS S3, Google Cloud Storage)
 - Enable Redis authentication
 - Set up proper CORS policies
+- Use environment-specific configuration files
 
-> ⚠️ **Security**: Never commit `.env` files or production secrets to version control. The `.env` file is already in `.gitignore`.
+> ⚠️ **Security**: The current `docker-compose.yml` uses default credentials safe only for local development.
 
 ## 🏃‍♂️ Development Workflow
 
@@ -215,30 +231,32 @@ The `docker-compose.yml` uses default development credentials that are safe for 
 
 ## 📈 Current Status
 
-**Phase**: Active Development
+**Phase**: Backend Complete - Frontend Development
 
 ### Completed ✅
 
-- Multi-database architecture setup
-- Core PostgreSQL entities (User, Deck, Card, Upload)
-- MongoDB analytics models (DeckAnalytics, ReviewSession)
-- Docker containerization
-- Enhanced Upload entity with parsing status tracking
+- ✅ **Backend Architecture**: Complete Spring Boot application with multi-database setup
+- ✅ **Authentication & Security**: BCrypt password hashing, Spring Security configuration
+- ✅ **Database Models**: PostgreSQL entities, MongoDB analytics, Redis caching
+- ✅ **REST API**: Full CRUD operations across all controllers
+- ✅ **Service Layer**: Complete business logic with comprehensive error handling
+- ✅ **Exception Handling**: Global exception handler with custom exceptions
+- ✅ **Testing**: Comprehensive integration tests with 100% pass rate
+- ✅ **Docker Setup**: Multi-service containerization with health checks
+- ✅ **Data Transfer Objects**: Complete DTO layer with validation
 
 ### In Progress 🚧
 
-- File parsing service implementation
-- REST API controllers
-- Frontend components and pages
-- Authentication system
+- 🚧 **Frontend Development**: Next.js application with React 19
+- 🚧 **API Integration**: Frontend-backend connectivity
+- 🚧 **UI Components**: Modern React components with Tailwind CSS
 
 ### Planned 📋
 
-- AI integration for content parsing
-- Spaced repetition algorithms
-- Advanced analytics dashboard
-- Mobile responsiveness
-- Performance optimizations
+- 📋 **AI Integration**: Intelligent flashcard generation from uploads
+- 📋 **Advanced Analytics**: Enhanced study progress tracking
+- 📋 **Spaced Repetition**: Smart review scheduling algorithms
+- 📋 **Mobile Optimization**: Responsive design and PWA features
 
 ## 🤝 Contributing
 

@@ -9,7 +9,7 @@ import com.study_companion.backend.model.Role;
 import com.study_companion.backend.model.postgres.User;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
-    
+
     /**
      * Find user by email
      */
@@ -31,17 +31,17 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     boolean existsByUsername(String username);
 
     /**
-     * Find users by role 
+     * Find users by role
      */
     List<User> findByRole(Role role);
 
     /**
-     * Find verified/unverified users 
+     * Find verified/unverified users
      */
     List<User> findByIsVerified(boolean isVerified);
 
     /**
-     * Find users who haven't logged in recently 
+     * Find users who haven't logged in recently
      */
     List<User> findByLastLoginBefore(LocalDateTime cutoffDate);
 }

@@ -2,6 +2,9 @@ package com.study_companion.backend.service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +33,13 @@ public class UserServiceIntegrationTest {
 
     @Autowired
     private UserService userService;
- 
+
     @Test
     void createUser_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
         assertThat(user.email()).isEqualTo("test@email.com");
         assertThat(user.name()).isEqualTo("John Smith");
@@ -50,10 +54,10 @@ public class UserServiceIntegrationTest {
 
         assertThat(exception.getMessage()).isEqualTo("User data cannot be null when creating a user");
     }
- 
+
     @Test
     void createUser_BlankEmail_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create(" ", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest(" ", "John Smith", "john123", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -64,7 +68,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankName_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", " ", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", " ", "john123", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -75,7 +79,7 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankUsername_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", " ", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", " ", "password");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
@@ -86,19 +90,21 @@ public class UserServiceIntegrationTest {
 
     @Test
     void createUser_BlankPassword_ThrowsInvalidUserCreationException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", " ");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123", " ");
 
         InvalidUserCreationException exception = assertThrows(InvalidUserCreationException.class, () -> {
             userService.createUser(createDto);
         });
 
         assertThat(exception.getMessage()).isEqualTo("Password cannot be empty");
-    }    
-    
+    }
+
     @Test
     void createUser_DuplicateEmail_ThrowsUserAlreadyExistsException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test@email.com", "Jane Smith", "jane123",
+                "password2");
 
         userService.createUser(createDto1);
 
@@ -111,14 +117,25 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getUserById_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get createdUser = userService.createUser(createDto);
-        UserDto.Get user = userService.getUserById(createdUser.id());
- 
-        assertThat(user.email()).isEqualTo("test@email.com");
-        assertThat(user.name()).isEqualTo("John Smith");
-        assertThat(user.username()).isEqualTo("john123");
+        UserDto.GetResponse createdUser = userService.createUser(createDto);
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(createdUser.id().toString(),
+                null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            UserDto.GetResponse user = userService.getUserById(createdUser.id());
+
+            assertThat(user.email()).isEqualTo("test@email.com");
+            assertThat(user.name()).isEqualTo("John Smith");
+            assertThat(user.username()).isEqualTo("john123");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -131,6 +148,7 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUserById_NonExistentId_ThrowsUserNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -142,11 +160,13 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUserByEmail_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get createdUser = userService.createUser(createDto);
-        UserDto.Get user = userService.getUserByEmail(createdUser.email());
+        UserDto.GetResponse createdUser = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.getUserByEmail(createdUser.email());
 
         assertThat(user.email()).isEqualTo("test@email.com");
         assertThat(user.name()).isEqualTo("John Smith");
@@ -161,8 +181,9 @@ public class UserServiceIntegrationTest {
 
         assertThat(exception.getMessage()).isEqualTo("Email cannot be null");
     }
- 
+
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUserByEmail_NonExistentId_ThrowsUserNotFoundException() {
         String emailString = "example@gmail.com";
 
@@ -174,11 +195,13 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUserByUsername_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get createdUser = userService.createUser(createDto);
-        UserDto.Get user = userService.getUserByUsername(createdUser.username());
+        UserDto.GetResponse createdUser = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.getUserByUsername(createdUser.username());
 
         assertThat(user.email()).isEqualTo("test@email.com");
         assertThat(user.name()).isEqualTo("John Smith");
@@ -195,6 +218,7 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getUserByUsername_NonExistentId_ThrowsUserNotFoundException() {
         String usernameString = "example123";
 
@@ -208,19 +232,21 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsers_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
 
-        List<UserDto.Get> users = userService.getAllUsers();
+        List<UserDto.GetResponse> users = userService.getAllUsers();
 
-        assertThat(users).hasSize(2); 
+        assertThat(users).hasSize(2);
         assertThat(users.get(0).email()).isEqualTo("test@email.com");
         assertThat(users.get(0).name()).isEqualTo("John Smith");
         assertThat(users.get(0).username()).isEqualTo("john123");
-        assertThat(users.get(1).email()).isEqualTo("test2@email.com"); 
+        assertThat(users.get(1).email()).isEqualTo("test2@email.com");
         assertThat(users.get(1).name()).isEqualTo("Jane Smith");
         assertThat(users.get(1).username()).isEqualTo("jane123");
     }
@@ -238,17 +264,19 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsersOfARole_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
 
-        List<UserDto.Get> users = userService.getAllUsersOfARole(Role.USER);
-        List<UserDto.Get> admin = userService.getAllUsersOfARole(Role.ADMIN);
+        List<UserDto.GetResponse> users = userService.getAllUsersOfARole(Role.USER);
+        List<UserDto.GetResponse> admin = userService.getAllUsersOfARole(Role.ADMIN);
 
         assertThat(users).hasSize(2);
-        assertThat(admin).hasSize(0); 
+        assertThat(admin).hasSize(0);
     }
 
     @Test
@@ -264,8 +292,10 @@ public class UserServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "USER")
     void getAllUsersOfARole_NonAdmin_ThrowsUnauthorizedUserAccessException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
         userService.createUser(createDto1);
         userService.createUser(createDto2);
@@ -279,13 +309,22 @@ public class UserServiceIntegrationTest {
 
     @Test
     void verifyUser_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-    
-        UserDto.Get user1 = userService.createUser(createDto);
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get verifiedUser = userService.verifyUser(user1.id());
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        assertThat(verifiedUser.isVerified()).isTrue();
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            UserDto.GetResponse verifiedUser = userService.verifyUser(user.id());
+
+            assertThat(verifiedUser.isVerified()).isTrue();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
@@ -299,32 +338,45 @@ public class UserServiceIntegrationTest {
 
     @Test
     void getAllUsersOfVerifiedStatus_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
-        UserDto.Create createDto3 = new UserDto.Create("test3@email.com", "Jacob Smith", "jacob123", "password3");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
-        UserDto.Get user1 = userService.createUser(createDto1);
+        UserDto.GetResponse user1 = userService.createUser(createDto1);
         userService.createUser(createDto2);
-        UserDto.Get user3 = userService.createUser(createDto3);
+
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user1.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         userService.verifyUser(user1.id());
-        userService.verifyUser(user3.id());
 
-        List<UserDto.Get> verifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(true);
-        List<UserDto.Get> unverifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(false);
+        UsernamePasswordAuthenticationToken adminAuth = new UsernamePasswordAuthenticationToken(
+                "admin", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        SecurityContextHolder.getContext().setAuthentication(adminAuth);
 
-        assertThat(verifiedUsers).hasSize(2);
-        assertThat(unverifiedUsers).hasSize(1);
+        try {
+            List<UserDto.GetResponse> verifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(true);
+            List<UserDto.GetResponse> unverifiedUsers = userService.getAllVerifiedOrUnverifiedUsers(false);
+
+            assertThat(verifiedUsers).hasSize(1);
+            assertThat(unverifiedUsers).hasSize(1);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllUsersInactiveSinceDate_ValidInput_ReturnsUsers() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
-        UserDto.Get user1 = userService.createUser(createDto1);
-        UserDto.Get user2 = userService.createUser(createDto2);
+        UserDto.GetResponse user1 = userService.createUser(createDto1);
+        UserDto.GetResponse user2 = userService.createUser(createDto2);
 
         userService.updateLastLogin(user1.id());
         userService.updateLastLogin(user2.id());
@@ -335,7 +387,7 @@ public class UserServiceIntegrationTest {
             Thread.currentThread().interrupt();
         }
 
-        List<UserDto.Get> users = userService.getInactiveUsersSince(LocalDateTime.now());
+        List<UserDto.GetResponse> users = userService.getInactiveUsersSince(LocalDateTime.now());
 
         assertThat(users).hasSize(2);
     }
@@ -351,93 +403,127 @@ public class UserServiceIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
     void getAllUsersInactiveSinceDate_NonAdmin_ThrowsUnauthorizedUserAccessException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get user1 = userService.createUser(createDto1);
-        UserDto.Get user2 = userService.createUser(createDto2);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        userService.updateLastLogin(user1.id());
-        userService.updateLastLogin(user2.id());
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
         try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            userService.updateLastLogin(user.id());
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
+                userService.getInactiveUsersSince(LocalDateTime.now());
+            });
+
+            assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+        } finally {
+            SecurityContextHolder.clearContext();
         }
-
-        UnauthorizedUserAccessException exception = assertThrows(UnauthorizedUserAccessException.class, () -> {
-            userService.getInactiveUsersSince(LocalDateTime.now());
-        });
-
-        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
     }
 
     @Test
     void updateUserEmail_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.Update dto = new UserDto.Update("newtest@email.com", null, null);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        userService.updateUser(user.id(), dto);
-        UserDto.Get refreshedUser = userService.getUserById(user.id());
+        try {
+            UserDto.UpdateRequest dto = new UserDto.UpdateRequest("newtest@email.com", null, null);
 
-        assertThat(refreshedUser.email()).isEqualTo("newtest@email.com");
-        assertThat(refreshedUser.name()).isEqualTo("John Smith");
-        assertThat(refreshedUser.username()).isEqualTo("john123");
+            userService.updateUser(user.id(), dto);
+            UserDto.GetResponse refreshedUser = userService.getUserById(user.id());
+
+            assertThat(refreshedUser.email()).isEqualTo("newtest@email.com");
+            assertThat(refreshedUser.name()).isEqualTo("John Smith");
+            assertThat(refreshedUser.username()).isEqualTo("john123");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     void updateUserEmail_InvalidInput_ThrowsException() {
-        UserDto.Create createDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
-        UserDto.Create createDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password2");
+        UserDto.CreateRequest createDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
+        UserDto.CreateRequest createDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password2");
 
-        UserDto.Get user = userService.createUser(createDto1);
+        UserDto.GetResponse user = userService.createUser(createDto1);
         userService.createUser(createDto2);
 
-        UserDto.Update dto1 = new UserDto.Update("test@email.com", null, null);
-        UserDto.Update dto2 = new UserDto.Update("test2@email.com", null, null);
+        UserDto.UpdateRequest dto1 = new UserDto.UpdateRequest("test@email.com", null, null);
+        UserDto.UpdateRequest dto2 = new UserDto.UpdateRequest("test2@email.com", null, null);
 
-        InvalidUserUpdateException exception1 = assertThrows(InvalidUserUpdateException.class, () -> {
-            userService.updateUser(user.id(), dto1);
-        });
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        assertThat(exception1.getMessage()).isEqualTo("Email is already set to this value");
+        try {
+            InvalidUserUpdateException exception1 = assertThrows(InvalidUserUpdateException.class, () -> {
+                userService.updateUser(user.id(), dto1);
+            });
 
-        UserAlreadyExistsException exception2 = assertThrows(UserAlreadyExistsException.class, () -> {
-            userService.updateUser(user.id(), dto2);
-        });
+            assertThat(exception1.getMessage()).isEqualTo("Email is already set to this value");
 
-        assertThat(exception2.getMessage()).isEqualTo("User with this email already exists");
+            UserAlreadyExistsException exception2 = assertThrows(UserAlreadyExistsException.class, () -> {
+                userService.updateUser(user.id(), dto2);
+            });
+
+            assertThat(exception2.getMessage()).isEqualTo("User with this email already exists");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
-    void updateUserNameAndUserName_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+    void updateUserUserName_ValidInput_ReturnsUser() {
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.Update dto = new UserDto.Update(null, "Jacob Smith", "jacob123");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        userService.updateUser(user.id(), dto);
-        UserDto.Get refreshedUser = userService.getUserById(user.id());
+        try {
+            UserDto.UpdateRequest dto = new UserDto.UpdateRequest(null, "Jacob Smith", "jacob123");
 
-        assertThat(refreshedUser.email()).isEqualTo("test@email.com");
-        assertThat(refreshedUser.name()).isEqualTo("Jacob Smith");
-        assertThat(refreshedUser.username()).isEqualTo("jacob123");
+            userService.updateUser(user.id(), dto);
+            UserDto.GetResponse refreshedUser = userService.getUserById(user.id());
+
+            assertThat(refreshedUser.email()).isEqualTo("test@email.com");
+            assertThat(refreshedUser.name()).isEqualTo("Jacob Smith");
+            assertThat(refreshedUser.username()).isEqualTo("jacob123");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     void updateUser_InvalidInput_ThrowsInvalidUserUpdate() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.Update updateDto = new UserDto.Update(null, " ", " ");
+        UserDto.UpdateRequest updateDto = new UserDto.UpdateRequest(null, " ", " ");
 
         InvalidUserUpdateException exception = assertThrows(InvalidUserUpdateException.class, () -> {
             userService.updateUser(user.id(), updateDto);
@@ -448,11 +534,12 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUser_NullUserId_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
         userService.createUser(createDto);
 
-        UserDto.Update dto = new UserDto.Update("test@email.com", "Jacob Smith", "jacob123");
+        UserDto.UpdateRequest dto = new UserDto.UpdateRequest("test@email.com", "Jacob Smith", "jacob123");
 
         InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
             userService.updateUser(null, dto);
@@ -463,9 +550,10 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUser_NullUserDto_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password1");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password1");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
         InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
             userService.updateUser(user.id(), null);
@@ -476,19 +564,29 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_ValidInput_ReturnsUser() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
-    
-        userService.updateUserPassword(user.id(), changeDto);
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
+        try {
+            UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("password", "newpassword",
+                    "newpassword");
+            userService.updateUserPassword(user.id(), changeDto);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     void updateUserPassword_NullUserId_ThrowsInvalidUserParameterException() {
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
-    
+        UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("password", "newpassword",
+                "newpassword");
+
         InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
             userService.updateUserPassword(null, changeDto);
         });
@@ -498,9 +596,10 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_NullUserDto_ThrowsInvalidUserParameterException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
         InvalidUserParameterException exception = assertThrows(InvalidUserParameterException.class, () -> {
             userService.updateUserPassword(user.id(), null);
@@ -511,75 +610,93 @@ public class UserServiceIntegrationTest {
 
     @Test
     void updateUserPassword_WrongCurrentPassword_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("wrongpassword", "newpassword", "newpassword");
- 
-        InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.id(), changeDto);
-        });
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        assertThat(exception.getMessage()).isEqualTo("Current password is incorrect");
+        try {
+            UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("wrongpassword", "newpassword",
+                    "newpassword");
+
+            InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
+                userService.updateUserPassword(user.id(), changeDto);
+            });
+
+            assertThat(exception.getMessage()).isEqualTo("Current password is incorrect");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     void updateUserPassword_SamePassword_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "password", "password");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.id(), changeDto);
-        }); 
- 
-        assertThat(exception.getMessage()).isEqualTo("Cannot change password to existing password");
+        try {
+            UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("password", "password",
+                    "password");
+
+            InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
+                userService.updateUserPassword(user.id(), changeDto);
+            });
+
+            assertThat(exception.getMessage()).isEqualTo("Cannot change password to existing password");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     void updateUserPassword_PasswordMismatch_ThrowsInvalidPasswordChangeException() {
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
+        UserDto.GetResponse user = userService.createUser(createDto);
 
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "differentpassword");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
-            userService.updateUserPassword(user.id(), changeDto);
-        });
+        try {
+            UserDto.ChangePasswordRequest changeDto = new UserDto.ChangePasswordRequest("password", "newpassword",
+                    "differentpassword");
 
-        assertThat(exception.getMessage()).isEqualTo("New password doesn't match confirm password");
-    }
+            InvalidPasswordChangeException exception = assertThrows(InvalidPasswordChangeException.class, () -> {
+                userService.updateUserPassword(user.id(), changeDto);
+            });
 
-    @Test
-    void updateUserPassword_NonExistentUser_ThrowsUserNotFoundException() {
-        UUID nonExistentId = UUID.randomUUID();
-
-        UserDto.ChangePassword changeDto = new UserDto.ChangePassword("password", "newpassword", "newpassword");
-
-        UserNotFoundException exception = assertThrows(UserNotFoundException.class, () -> {
-            userService.updateUserPassword(nonExistentId, changeDto);
-        });
-
-        assertThat(exception.getMessage()).contains("User with ID " + nonExistentId + " not found");
+            assertThat(exception.getMessage()).isEqualTo("New password doesn't match confirm password");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 
     @Test
     @WithMockUser(roles = "ADMIN")
-    void deleteUser_ValidInput() { 
-        UserDto.Create createDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+    void deleteUser_ValidInput() {
+        UserDto.CreateRequest createDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(createDto);
-        List<UserDto.Get> users = userService.getAllUsers();
+        UserDto.GetResponse user = userService.createUser(createDto);
+        List<UserDto.GetResponse> users = userService.getAllUsers();
 
-        assertThat(users).hasSize(1); 
+        assertThat(users).hasSize(1);
 
         userService.deleteUser(user.id());
         users = userService.getAllUsers();
- 
+
         assertThat(users).hasSize(0);
     }
 
@@ -592,4 +709,3 @@ public class UserServiceIntegrationTest {
         assertThat(exception.getMessage()).isEqualTo("userId cannot be null");
     }
 }
-  

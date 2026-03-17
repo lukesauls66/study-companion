@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
 public class DeckTest {
-    
+
     @Mock
     private User mockUser;
 
@@ -52,11 +52,11 @@ public class DeckTest {
     @Test
     void testGettersAndSetters() {
         Deck deck = new Deck();
-        
+
         deck.setUser(mockUser);
         deck.setTitle(title);
         deck.setDescription(description);
-        
+
         assertEquals(mockUser, deck.getUser());
         assertEquals(title, deck.getTitle());
         assertEquals(description, deck.getDescription());

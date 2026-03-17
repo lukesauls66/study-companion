@@ -44,7 +44,7 @@ public class Upload {
     private boolean isParsed;
 
     @Enumerated(EnumType.STRING)
-    private ParsingStatus parsingStatus; 
+    private ParsingStatus parsingStatus;
 
     private String errorMessage;
 

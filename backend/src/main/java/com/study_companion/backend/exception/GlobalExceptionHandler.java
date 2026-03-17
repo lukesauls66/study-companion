@@ -1,9 +1,11 @@
 package com.study_companion.backend.exception;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import com.study_companion.backend.dto.GenericDto.ErrorResponse;
 import com.study_companion.backend.exception.analytics.AnalyticsException;
 import com.study_companion.backend.exception.analytics.AnalyticsOperationException;
 import com.study_companion.backend.exception.analytics.InvalidAnalyticsParameterException;
@@ -45,176 +47,63 @@ import com.study_companion.backend.exception.user.UserOperationException;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    // System operation failures (database, cache, etc.)
+    // 500 - System / Operation Failures
     @ExceptionHandler({ SessionOperationException.class, CacheOperationException.class, UserOperationException.class,
             DeckOperationException.class, CardOperationException.class, UploadOperationException.class,
             AnalyticsOperationException.class })
-    public ResponseEntity<String> handleSystemOperations(RuntimeException e) {
-        return ResponseEntity.internalServerError().body("A system error occurred. Please try again later.");
+    public ResponseEntity<ErrorResponse> handleSystemOperations(RuntimeException e) {
+        return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("A system error occurred. Please try again later.", true));
     }
 
-    // User exceptions
-    @ExceptionHandler(UserException.class)
-    public ResponseEntity<String> handleUserException(UserException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    // 400 - Bad Request (validation / invalid input)
+    @ExceptionHandler({ UserException.class, InvalidPasswordChangeException.class, InvalidUserCreationException.class,
+            InvalidUserUpdateException.class, InvalidUserParameterException.class, DeckException.class,
+            InvalidDeckCreationException.class, InvalidDeckUpdateException.class, InvalidDeckParameterException.class,
+            CardException.class, InvalidCardUpdateException.class, InvalidCardCreationException.class,
+            InvalidCardParameterException.class, UploadException.class,
+            InvalidUploadCreationException.class, InvalidUploadParameterException.class, SessionException.class,
+            InvalidSessionParameterException.class, AnalyticsException.class,
+            InvalidAnalyticsParameterException.class })
+    public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e) {
+        return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage(), true));
     }
 
-    @ExceptionHandler(UnauthorizedUserAccessException.class)
-    public ResponseEntity<String> handleUnauthorizedUserAccess(UnauthorizedUserAccessException e) {
-        return ResponseEntity.status(403).body(e.getMessage());
+    // 401 - Unauthorized
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException e) {
+        return ResponseEntity.status(401)
+                .body(new ErrorResponse("Invalid credentials", true));
     }
 
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<String> handleUserAlreadyExists(UserAlreadyExistsException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    // 403 - Forbidden
+    @ExceptionHandler({ UnauthorizedUserAccessException.class, UnauthorizedDeckAccessException.class,
+            UnauthorizedCardAccessException.class, UnauthorizedUploadAccessException.class,
+            UnauthorizedAnalyticsAccessException.class })
+    public ResponseEntity<ErrorResponse> handleForbidden(RuntimeException e) {
+        return ResponseEntity.status(403).body(new ErrorResponse(e.getMessage(), true));
     }
 
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<String> handleUserNotFound(UserNotFoundException e) {
-        return ResponseEntity.status(404).body(e.getMessage());
+    // 404 - Not Found
+    @ExceptionHandler({ UserNotFoundException.class, DeckNotFoundException.class, CardNotFoundException.class,
+            UploadNotFoundException.class })
+    public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
+        return ResponseEntity.status(404).body(new ErrorResponse(e.getMessage(), true));
     }
 
-    @ExceptionHandler(InvalidPasswordChangeException.class)
-    public ResponseEntity<String> handleInvalidPasswordChange(InvalidPasswordChangeException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
+    // 409 - Conflict
+    @ExceptionHandler({ UserAlreadyExistsException.class })
+    public ResponseEntity<ErrorResponse> handleConflict(RuntimeException e) {
+        return ResponseEntity.status(409).body(new ErrorResponse(e.getMessage(), true));
     }
 
-    @ExceptionHandler(InvalidUserCreationException.class)
-    public ResponseEntity<String> handleInvalidUserCreation(InvalidUserCreationException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidUserUpdateException.class)
-    public ResponseEntity<String> handleInvalidUserUpdate(InvalidUserUpdateException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidUserParameterException.class)
-    public ResponseEntity<String> handleInvalidUserParameter(InvalidUserParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    // Deck exceptions
-    @ExceptionHandler(DeckException.class)
-    public ResponseEntity<String> handleDeckException(DeckException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(DeckNotFoundException.class)
-    public ResponseEntity<String> handleDeckNotFound(DeckNotFoundException e) {
-        return ResponseEntity.status(404).body(e.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedDeckAccessException.class)
-    public ResponseEntity<String> handleUnauthorizedDeckAccess(UnauthorizedDeckAccessException e) {
-        return ResponseEntity.status(403).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidDeckCreationException.class)
-    public ResponseEntity<String> handleInvalidDeckCreation(InvalidDeckCreationException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidDeckUpdateException.class)
-    public ResponseEntity<String> handleInvalidDeckUpdate(InvalidDeckUpdateException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidDeckParameterException.class)
-    public ResponseEntity<String> handleInvalidDeckParameter(InvalidDeckParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    // Card exceptions
-    @ExceptionHandler(CardException.class)
-    public ResponseEntity<String> handleCardException(CardException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidCardUpdateException.class)
-    public ResponseEntity<String> handleInvalidCardUpdate(InvalidCardUpdateException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidCardCreationException.class)
-    public ResponseEntity<String> handleInvalidCardCreation(InvalidCardCreationException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(CardNotFoundException.class)
-    public ResponseEntity<String> handleCardNotFound(CardNotFoundException e) {
-        return ResponseEntity.status(404).body(e.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedCardAccessException.class)
-    public ResponseEntity<String> handleUnauthorizedCardAccess(UnauthorizedCardAccessException e) {
-        return ResponseEntity.status(403).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidCardParameterException.class)
-    public ResponseEntity<String> handleInvalidCardParameter(InvalidCardParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    // Upload exceptions
-    @ExceptionHandler(UploadException.class)
-    public ResponseEntity<String> handleUploadException(UploadException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedUploadAccessException.class)
-    public ResponseEntity<String> handleUnauthorizedUploadAccess(UnauthorizedUploadAccessException e) {
-        return ResponseEntity.status(403).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidUploadCreationException.class)
-    public ResponseEntity<String> handleInvalidUploadCreation(InvalidUploadCreationException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(UploadNotFoundException.class)
-    public ResponseEntity<String> handleUploadNotFound(UploadNotFoundException e) {
-        return ResponseEntity.status(404).body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidUploadParameterException.class)
-    public ResponseEntity<String> handleInvalidUploadParameter(InvalidUploadParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    // Session exceptions
-    @ExceptionHandler(SessionException.class)
-    public ResponseEntity<String> handleSessionException(SessionException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidSessionParameterException.class)
-    public ResponseEntity<String> handleInvalidSessionParameter(InvalidSessionParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    // Analytics exceptions
-    @ExceptionHandler(AnalyticsException.class)
-    public ResponseEntity<String> handleAnalyticsException(AnalyticsException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(InvalidAnalyticsParameterException.class)
-    public ResponseEntity<String> handleInvalidAnalyticsParameterException(InvalidAnalyticsParameterException e) {
-        return ResponseEntity.badRequest().body(e.getMessage());
-    }
-
-    @ExceptionHandler(UnauthorizedAnalyticsAccessException.class)
-    public ResponseEntity<String> handleUnauthorizedAnalyticsAccess(UnauthorizedAnalyticsAccessException e) {
-        return ResponseEntity.status(403).body(e.getMessage());
-    }
-
-    // Fallback handler for any unexpected exceptions
+    // 500 - Generic fallback
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleGenericException(Exception e) {
+    public ResponseEntity<ErrorResponse> handleGenericException(Exception e) {
         System.err.println("Unhandled exception: " + e.getClass().getName() + " - " + e.getMessage());
         e.printStackTrace();
 
-        return ResponseEntity.internalServerError().body("An unexpected error occurred. Please try again later.");
+        return ResponseEntity.internalServerError()
+                .body(new ErrorResponse("An unexpected error occurred. Please try again later.", true));
     }
 }

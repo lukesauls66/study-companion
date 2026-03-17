@@ -107,7 +107,7 @@ public class Card {
         return updatedAt;
     }
 
-    //Lifecycle Callbacks
+    // Lifecycle Callbacks
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

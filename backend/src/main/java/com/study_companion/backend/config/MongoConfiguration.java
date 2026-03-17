@@ -26,10 +26,9 @@ public class MongoConfiguration extends AbstractMongoClientConfiguration {
     @Override
     protected void configureClientSettings(MongoClientSettings.Builder builder) {
         builder.uuidRepresentation(UuidRepresentation.STANDARD)
-               .applyConnectionString(new ConnectionString("mongodb://localhost:27017/" + getDatabaseName()))
-               .applyToConnectionPoolSettings(poolBuilder -> 
-                   poolBuilder.maxConnectionIdleTime(30, TimeUnit.SECONDS)
-                             .maxWaitTime(120, TimeUnit.SECONDS));
+                .applyConnectionString(new ConnectionString("mongodb://localhost:27017/" + getDatabaseName()))
+                .applyToConnectionPoolSettings(poolBuilder -> poolBuilder.maxConnectionIdleTime(30, TimeUnit.SECONDS)
+                        .maxWaitTime(120, TimeUnit.SECONDS));
     }
 
     @Bean

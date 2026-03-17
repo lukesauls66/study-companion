@@ -6,7 +6,7 @@ import java.util.UUID;
 import java.util.List;
 
 public interface DeckRepository extends JpaRepository<Deck, UUID> {
-    
+
     /**
      * Find all decks belonging to a specific user
      */

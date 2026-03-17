@@ -9,7 +9,7 @@ import java.util.UUID;
 import java.time.LocalDateTime;
 
 public class SessionTest {
-    
+
     private UUID userId;
 
     @BeforeEach
@@ -97,7 +97,7 @@ public class SessionTest {
     @Test
     void testToString() {
         Session session = new Session(userId);
-        
+
         String expectedString = "Session{" +
                 "sessionId='" + session.getSessionId() + '\'' +
                 ", userId='" + session.getUserId() + '\'' +

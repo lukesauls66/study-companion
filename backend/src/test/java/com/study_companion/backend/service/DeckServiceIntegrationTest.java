@@ -9,6 +9,9 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,7 +24,6 @@ import com.study_companion.backend.exception.deck.InvalidDeckParameterException;
 import com.study_companion.backend.exception.deck.InvalidDeckUpdateException;
 import com.study_companion.backend.exception.deck.UnauthorizedDeckAccessException;
 import com.study_companion.backend.exception.user.UserNotFoundException;
-import com.study_companion.backend.model.postgres.Deck;
 import com.study_companion.backend.model.postgres.User;
 import com.study_companion.backend.repository.postgres.UserRepository;
 
@@ -40,18 +42,20 @@ public class DeckServiceIntegrationTest {
     private UserService userService;
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void createDeck_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
-        assertThat(deck.getUser().getId()).isEqualTo(user.id());
-        assertThat(deck.getTitle()).isEqualTo("Test Deck");
-        assertThat(deck.getDescription()).isEqualTo("Testing");
+        assertThat(deck.userId()).isEqualTo(user.id());
+        assertThat(deck.title()).isEqualTo("Test Deck");
+        assertThat(deck.description()).isEqualTo("Testing");
     }
 
     @Test
@@ -65,11 +69,12 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void createDeck_BlankTitle_ThrowsInvalidDeckCreationException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), " ", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), " ", "Testing");
 
         InvalidDeckCreationException exception = assertThrows(InvalidDeckCreationException.class, () -> {
             deckService.createDeck(deckCreateDto);
@@ -80,11 +85,12 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void createDeck_BlankDescription_ThrowsInvalidDeckCreationException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", " ");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", " ");
 
         InvalidDeckCreationException exception = assertThrows(InvalidDeckCreationException.class, () -> {
             deckService.createDeck(deckCreateDto);
@@ -94,21 +100,24 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getDeckById_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck createdDeck = deckService.createDeck(deckCreateDto);
-        Deck deck = deckService.getDeckById(createdDeck.getId());
+        DeckDto.GetResponse createdDeck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.getDeckById(createdDeck.deckId());
 
-        assertThat(deck.getTitle()).isEqualTo("Test Deck");
-        assertThat(deck.getDescription()).isEqualTo("Testing");
+        assertThat(deck.title()).isEqualTo("Test Deck");
+        assertThat(deck.description()).isEqualTo("Testing");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getDeckById_NonExistentId_ThrowsDeckNotFoundException() {
         UUID nonExistentId = UUID.randomUUID();
 
@@ -131,21 +140,23 @@ public class DeckServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void getAllDecks_ValidInput_ReturnsDecks() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
+        DeckDto.CreateRequest deckCreateDto1 = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto2 = new DeckDto.CreateRequest(user.id(), "Test Deck 2", "Testing 2");
 
         deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
 
-        List<Deck> decks = deckService.getAllDecks();
+        List<DeckDto.GetResponse> decks = deckService.getAllDecks();
 
         assertThat(decks).hasSize(2);
-        assertThat(decks).extracting(Deck::getTitle).containsExactlyInAnyOrder("Test Deck", "Test Deck 2");
-        assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 2");
+        assertThat(decks).extracting(DeckDto.GetResponse::title).containsExactlyInAnyOrder("Test Deck", "Test Deck 2");
+        assertThat(decks).extracting(DeckDto.GetResponse::description).containsExactlyInAnyOrder("Testing",
+                "Testing 2");
     }
 
     @Test
@@ -159,26 +170,30 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getAllUserDecks_ValidInput_ReturnsDecks() {
-        UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
-        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
+        UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
+        UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password123");
 
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
-        DeckDto.Create deckCreateDto3 = new DeckDto.Create(user1.id(), "Test Deck 3", "Testing 3");
+        DeckDto.CreateRequest deckCreateDto1 = new DeckDto.CreateRequest(user1.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto2 = new DeckDto.CreateRequest(user2.id(), "Test Deck 2", "Testing 2");
+        DeckDto.CreateRequest deckCreateDto3 = new DeckDto.CreateRequest(user1.id(), "Test Deck 3", "Testing 3");
 
         deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
         deckService.createDeck(deckCreateDto3);
 
-        List<Deck> decks = deckService.getAllUserDecks(user1.id());
+        List<DeckDto.GetResponse> decks = deckService.getAllUserDecks(user1.id());
 
         assertThat(decks).hasSize(2);
-        assertThat(decks).extracting(Deck::getTitle).containsExactlyInAnyOrder("Test Deck", "Test Deck 3");
-        assertThat(decks).extracting(Deck::getDescription).containsExactlyInAnyOrder("Testing", "Testing 3");
+        assertThat(decks).extracting(DeckDto.GetResponse::title).containsExactlyInAnyOrder("Test Deck", "Test Deck 3");
+        assertThat(decks).extracting(DeckDto.GetResponse::description).containsExactlyInAnyOrder("Testing",
+                "Testing 3");
     }
 
     @Test
@@ -191,16 +206,19 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void getCountOfAllUserDecks_ValidInput_ReturnsNumOfDecks() {
-        UserDto.Create userCreateDto1 = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
-        UserDto.Create userCreateDto2 = new UserDto.Create("test2@email.com", "Jane Smith", "jane123", "password123");
+        UserDto.CreateRequest userCreateDto1 = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
+        UserDto.CreateRequest userCreateDto2 = new UserDto.CreateRequest("test2@email.com", "Jane Smith", "jane123",
+                "password123");
 
-        UserDto.Get user1 = userService.createUser(userCreateDto1);
-        UserDto.Get user2 = userService.createUser(userCreateDto2);
+        UserDto.GetResponse user1 = userService.createUser(userCreateDto1);
+        UserDto.GetResponse user2 = userService.createUser(userCreateDto2);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user1.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user2.id(), "Test Deck 2", "Testing 2");
-        DeckDto.Create deckCreateDto3 = new DeckDto.Create(user1.id(), "Test Deck 3", "Testing 3");
+        DeckDto.CreateRequest deckCreateDto1 = new DeckDto.CreateRequest(user1.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto2 = new DeckDto.CreateRequest(user2.id(), "Test Deck 2", "Testing 2");
+        DeckDto.CreateRequest deckCreateDto3 = new DeckDto.CreateRequest(user1.id(), "Test Deck 3", "Testing 3");
 
         deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
@@ -221,39 +239,43 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_ValidInput_ReturnsDeck() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
-        DeckDto.Update deckUpdateDto = new DeckDto.Update("Update Test Deck", "Update Testing");
+        DeckDto.UpdateRequest deckUpdateDto = new DeckDto.UpdateRequest("Update Test Deck", "Update Testing");
 
-        Deck updatedDeck = deckService.updateDeck(deck.getId(), deckUpdateDto, user.id());
+        DeckDto.GetResponse updatedDeck = deckService.updateDeck(deck.deckId(), deckUpdateDto, user.id());
 
-        assertThat(updatedDeck.getId()).isEqualTo(deck.getId());
-        assertThat(updatedDeck.getUser().getId()).isEqualTo(user.id());
-        assertThat(updatedDeck.getTitle()).isEqualTo("Update Test Deck");
-        assertThat(updatedDeck.getDescription()).isEqualTo("Update Testing");
+        assertThat(updatedDeck.deckId()).isEqualTo(deck.deckId());
+        assertThat(updatedDeck.userId()).isEqualTo(user.id());
+        assertThat(updatedDeck.title()).isEqualTo("Update Test Deck");
+        assertThat(updatedDeck.description()).isEqualTo("Update Testing");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_InvalidInput_ThrowsInvalidDeckUpdateException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
-        DeckDto.Update deckUpdateDto = new DeckDto.Update("", "");
+        DeckDto.UpdateRequest deckUpdateDto = new DeckDto.UpdateRequest("", "");
 
         InvalidDeckUpdateException exception = assertThrows(InvalidDeckUpdateException.class, () -> {
-            deckService.updateDeck(deck.getId(), deckUpdateDto, user.id());
+            deckService.updateDeck(deck.deckId(), deckUpdateDto, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("At least one field must be provided for update");
@@ -261,11 +283,12 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void updateDeck_NullDeckId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Update deckUpdateDto = new DeckDto.Update("", "");
+        DeckDto.UpdateRequest deckUpdateDto = new DeckDto.UpdateRequest("", "");
 
         InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
             deckService.updateDeck(null, deckUpdateDto, user.id());
@@ -275,77 +298,85 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_NullDeckDto_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
         InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
-            deckService.updateDeck(deck.getId(), null, user.id());
+            deckService.updateDeck(deck.deckId(), null, user.id());
         });
 
         assertThat(exception.getMessage()).isEqualTo("Deck data transfer object cannot be null");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
-        DeckDto.Update deckUpdateDto = new DeckDto.Update("", "");
+        DeckDto.UpdateRequest deckUpdateDto = new DeckDto.UpdateRequest("", "");
 
         InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
-            deckService.updateDeck(deck.getId(), deckUpdateDto, null);
+            deckService.updateDeck(deck.deckId(), deckUpdateDto, null);
         });
 
         assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void updateDeck_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
-        DeckDto.Update deckUpdateDto = new DeckDto.Update("Update Test Deck", "Update Testing");
+        DeckDto.UpdateRequest deckUpdateDto = new DeckDto.UpdateRequest("Update Test Deck", "Update Testing");
 
         UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
-            deckService.updateDeck(deck.getId(), deckUpdateDto, unauthorizedUUID);
+            deckService.updateDeck(deck.deckId(), deckUpdateDto, unauthorizedUUID);
         });
 
         assertThat(exception.getMessage()).isEqualTo("You can only update your own decks");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteDeckById_ValidInput() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
         User refreshedUser1 = userRepository.findById(user.id())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         assertThat(refreshedUser1.getDecks()).hasSize(1);
 
-        deckService.deleteDeckById(deck.getId(), user.id());
+        deckService.deleteDeckById(deck.deckId(), user.id());
 
         User refreshedUser2 = userRepository.findById(user.id())
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
@@ -355,9 +386,10 @@ public class DeckServiceIntegrationTest {
 
     @Test
     void deleteDeckById_NullDeckId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
         InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
             deckService.deleteDeckById(null, user.id());
@@ -367,35 +399,39 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteDeckById_NullRequestingUserId_ThrowsInvalidDeckParameterException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
         InvalidDeckParameterException exception = assertThrows(InvalidDeckParameterException.class, () -> {
-            deckService.deleteDeckById(deck.getId(), null);
+            deckService.deleteDeckById(deck.deckId(), null);
         });
 
         assertThat(exception.getMessage()).isEqualTo("Requesting userId cannot be null");
     }
 
     @Test
+    @WithMockUser(roles = "ADMIN")
     void deleteDeckById_InvalidUserAccess_ThrowsUnauthorizedDeckAccessException() {
         UUID unauthorizedUUID = UUID.randomUUID();
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto = new DeckDto.Create(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
 
-        Deck deck = deckService.createDeck(deckCreateDto);
+        DeckDto.GetResponse deck = deckService.createDeck(deckCreateDto);
 
         UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
-            deckService.deleteDeckById(deck.getId(), unauthorizedUUID);
+            deckService.deleteDeckById(deck.deckId(), unauthorizedUUID);
         });
 
         assertThat(exception.getMessage()).isEqualTo("You can only delete your own decks");
@@ -404,13 +440,14 @@ public class DeckServiceIntegrationTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void deleteAllUserDecks_ValidInput() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
-        DeckDto.Create deckCreateDto3 = new DeckDto.Create(user.id(), "Test Deck 3", "Testing 3");
+        DeckDto.CreateRequest deckCreateDto1 = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
+        DeckDto.CreateRequest deckCreateDto2 = new DeckDto.CreateRequest(user.id(), "Test Deck 2", "Testing 2");
+        DeckDto.CreateRequest deckCreateDto3 = new DeckDto.CreateRequest(user.id(), "Test Deck 3", "Testing 3");
 
         deckService.createDeck(deckCreateDto1);
         deckService.createDeck(deckCreateDto2);
@@ -438,24 +475,33 @@ public class DeckServiceIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "USER")
-    void deleteAllUserDecks_NonAdmin_ThrowsUnauthorizedDeckAccessException() {
-        UserDto.Create userCreateDto = new UserDto.Create("test@email.com", "John Smith", "john123", "password");
+    void deleteAllUserDecks_NonAdminAndNotOwner_ThrowsUnauthorizedDeckAccessException() {
+        UserDto.CreateRequest userCreateDto = new UserDto.CreateRequest("test@email.com", "John Smith", "john123",
+                "password");
 
-        UserDto.Get user = userService.createUser(userCreateDto);
+        UserDto.GetResponse user = userService.createUser(userCreateDto);
 
-        DeckDto.Create deckCreateDto1 = new DeckDto.Create(user.id(), "Test Deck", "Testing");
-        DeckDto.Create deckCreateDto2 = new DeckDto.Create(user.id(), "Test Deck 2", "Testing 2");
-        DeckDto.Create deckCreateDto3 = new DeckDto.Create(user.id(), "Test Deck 3", "Testing 3");
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                user.id().toString(), null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContextHolder.getContext().setAuthentication(auth);
 
-        deckService.createDeck(deckCreateDto1);
-        deckService.createDeck(deckCreateDto2);
-        deckService.createDeck(deckCreateDto3);
+        try {
+            DeckDto.CreateRequest deckCreateDto1 = new DeckDto.CreateRequest(user.id(), "Test Deck", "Testing");
+            DeckDto.CreateRequest deckCreateDto2 = new DeckDto.CreateRequest(user.id(), "Test Deck 2", "Testing 2");
+            DeckDto.CreateRequest deckCreateDto3 = new DeckDto.CreateRequest(user.id(), "Test Deck 3", "Testing 3");
 
-        UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
-            deckService.deleteAllUserDecks(user.id());
-        });
+            deckService.createDeck(deckCreateDto1);
+            deckService.createDeck(deckCreateDto2);
+            deckService.createDeck(deckCreateDto3);
 
-        assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+            UnauthorizedDeckAccessException exception = assertThrows(UnauthorizedDeckAccessException.class, () -> {
+                deckService.deleteAllUserDecks(UUID.randomUUID());
+            });
+
+            assertThat(exception.getMessage()).isEqualTo("Unauthorized user access");
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
     }
 }

@@ -9,18 +9,18 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.UUID;
 
-@RedisHash(value = "cached_decks", timeToLive = 86400) // 24 hours TTL - matches session duration 
+@RedisHash(value = "cached_decks", timeToLive = 86400) // 24 hours TTL - matches session duration
 public class CachedDecks implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     @Id
     private UUID userId;
-    
+
     @NotNull
     private List<DeckCache> decks;
-    
+
     private LocalDateTime cachedAt;
-    
+
     private LocalDateTime lastModified;
 
     // Constructors
@@ -112,6 +112,5 @@ public class CachedDecks implements Serializable {
                 ", lastModified=" + lastModified +
                 '}';
     }
-
 
 }
