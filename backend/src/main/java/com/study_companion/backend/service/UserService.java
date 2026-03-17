@@ -97,9 +97,12 @@ public class UserService {
      * 
      * @param id the UUID of the user to retrieve
      * @return the user with the specified ID
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given ID
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being fetched
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse getUserById(UUID id) {
         if (id == null) {
@@ -132,6 +135,9 @@ public class UserService {
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch user: {}", e.getMessage());
             throw new UserOperationException("Failed to fetch user", e);
@@ -143,9 +149,13 @@ public class UserService {
      * 
      * @param email the email address of the user to retrieve
      * @return the user with the specified email
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given email
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given
+     *                                         email
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse getUserByEmail(String email) {
         if (email == null) {
@@ -177,6 +187,9 @@ public class UserService {
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided email: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch user: {}", e.getMessage());
             throw new UserOperationException("Failed to fetch user", e);
@@ -188,10 +201,13 @@ public class UserService {
      * 
      * @param username the username of the user to retrieve
      * @return the user with the specified username
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given
-     *                                       username
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given
+     *                                         username
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse getUserByUsername(String username) {
         if (username == null) {
@@ -223,6 +239,9 @@ public class UserService {
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided username: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch user: {}", e.getMessage());
             throw new UserOperationException("Failed to fetch user", e);
@@ -234,8 +253,9 @@ public class UserService {
      * Should typically be restricted to admin users in production.
      * 
      * @return a list of all users in the system
-     * @throws UnauthorizedUserAccessException if authentication fails or user is
-     *                                         not an admin
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
      * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.GetResponse> getAllUsers() {
@@ -259,7 +279,7 @@ public class UserService {
             logger.info("Found all users");
             return users;
         } catch (UnauthorizedUserAccessException e) {
-            logger.error("UnauthorizedUser: {}", e.getMessage());
+            logger.error("Access denied: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all users: {}", e.getMessage());
@@ -303,7 +323,7 @@ public class UserService {
             logger.info("Found users with provided role");
             return users;
         } catch (UnauthorizedUserAccessException e) {
-            logger.error("UnauthorizedUser: {}", e.getMessage());
+            logger.error("Access denied: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch users of provided role {}: {}", role, e.getMessage());
@@ -317,9 +337,12 @@ public class UserService {
      * 
      * @param userId the UUID of the user to verify
      * @return the updated user with verified status set to true
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given ID
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not the user being verified
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse verifyUser(UUID userId) {
         if (userId == null) {
@@ -349,6 +372,9 @@ public class UserService {
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to verify user: {}", e.getMessage());
             throw new UserOperationException("Failed to verify user", e);
@@ -361,8 +387,9 @@ public class UserService {
      * 
      * @param isVerified true to get verified users, false to get unverified users
      * @return a list of users with the specified verification status
-     * @throws UnauthorizedUserAccessException if authentication fails or user is
-     *                                         not an admin
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
      * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.GetResponse> getAllVerifiedOrUnverifiedUsers(boolean isVerified) {
@@ -387,6 +414,9 @@ public class UserService {
                     .toList();
             logger.info("Found all users with verified status: {}", isVerified);
             return users;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all users with provided verified status {}: {}", isVerified, e.getMessage());
             throw new UserOperationException("Failed to fetch all users with provided verified status", e);
@@ -398,9 +428,12 @@ public class UserService {
      * Called during authentication process to track user activity.
      * 
      * @param userId the UUID of the user whose last login to update
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given ID
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being updated
+     * @throws UserOperationException          if server error occurs
      */
     public void updateLastLogin(UUID userId) {
         if (userId == null) {
@@ -432,6 +465,9 @@ public class UserService {
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to update user's last login: {}", e.getMessage());
             throw new UserOperationException("Failed to update user's last login", e);
@@ -446,8 +482,9 @@ public class UserService {
      *             considered inactive
      * @return a list of users who haven't logged in since the specified date
      * @throws InvalidUserParameterException   if any nonnull arg is null
-     * @throws UnauthorizedUserAccessException if authentication fails or user is
-     *                                         not an admin
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
      * @throws UserOperationException          if server error occurs
      */
     public List<UserDto.GetResponse> getInactiveUsersSince(LocalDateTime date) {
@@ -477,7 +514,7 @@ public class UserService {
             logger.info("Successfully fetched all users that have not logged in since {}", date);
             return users;
         } catch (UnauthorizedUserAccessException e) {
-            logger.error("UnauthorizedUser: {}", e.getMessage());
+            logger.error("Access denied: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch users that have not logged in since {}: {}", date, e.getMessage());
@@ -493,13 +530,16 @@ public class UserService {
      * @param userId  the UUID of the user to update
      * @param userDto the update data containing new email, name, and/or username
      * @return the updated user
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given ID
-     * @throws InvalidUserUpdateException    if no fields provided or email
-     *                                       unchanged
-     * @throws UserAlreadyExistsException    if email is already in use by another
-     *                                       user
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws InvalidUserUpdateException      if no fields provided or email
+     *                                         unchanged
+     * @throws UserAlreadyExistsException      if email is already in use by another
+     *                                         user
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being updated
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse updateUser(UUID userId, UserDto.UpdateRequest userDto) {
         if (userId == null) {
@@ -568,6 +608,9 @@ public class UserService {
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user");
             return convertToDto(updatedUser);
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UserException e) {
             logger.error("User update failed: {}", e.getMessage());
             throw e;
@@ -586,12 +629,16 @@ public class UserService {
      * @param userDto the password change data containing current, new, and
      *                confirmation passwords
      * @return the updated user
-     * @throws InvalidUserParameterException  if any nonnull arg is null
-     * @throws UserNotFoundException          if no user exists with the given ID
-     * @throws InvalidPasswordChangeException if current password is wrong, new
-     *                                        password same as current, or passwords
-     *                                        don't match
-     * @throws UserOperationException         if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws InvalidPasswordChangeException  if current password is wrong, new
+     *                                         password same as current, or
+     *                                         passwords
+     *                                         don't match
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being updated
+     * @throws UserOperationException          if server error occurs
      */
     public UserDto.GetResponse updateUserPassword(UUID userId, UserDto.ChangePasswordRequest userDto) {
         if (userId == null) {
@@ -635,6 +682,9 @@ public class UserService {
             User updatedUser = userRepository.save(existingUser);
             logger.info("Successfully updated user's password");
             return convertToDto(updatedUser);
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UserException e) {
             logger.error("User password change failed: {}", e.getMessage());
             throw e;
@@ -650,9 +700,12 @@ public class UserService {
      * JPA cascade settings.
      * 
      * @param userId the UUID of the user to delete
-     * @throws InvalidUserParameterException if any nonnull arg is null
-     * @throws UserNotFoundException         if no user exists with the given ID
-     * @throws UserOperationException        if server error occurs
+     * @throws InvalidUserParameterException   if any nonnull arg is null
+     * @throws UserNotFoundException           if no user exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the user being deleted
+     * @throws UserOperationException          if server error occurs
      */
     public void deleteUser(UUID userId) {
         if (userId == null) {
@@ -678,6 +731,9 @@ public class UserService {
 
             userRepository.deleteById(userId);
             logger.info("Successfully deleted user with provided id");
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UserNotFoundException e) {
             logger.error("User not found with provided id: {}", e.getMessage());
             throw e;

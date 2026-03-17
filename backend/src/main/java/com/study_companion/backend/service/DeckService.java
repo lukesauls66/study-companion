@@ -54,12 +54,13 @@ public class DeckService {
      * @param deckDto the deck creation data containing userId, title, and
      *                description
      * @return the created deck with generated ID and timestamps
-     * @throws InvalidDeckParameterException if any nonnull arg is null
-     * @throws InvalidUserParameterException if userId is invalid
-     * @throws UserNotFoundException         if the specified user does not exist
-     * @throws InvalidDeckCreationException  if title or description is blank
-     * @throws UserOperationException        if user operations fail
-     * @throws DeckOperationException        if server error occurs
+     * @throws InvalidDeckParameterException   if any nonnull arg is null
+     * @throws InvalidUserParameterException   if userId is invalid
+     * @throws UserNotFoundException           if the specified user does not exist
+     * @throws InvalidDeckCreationException    if title or description is blank
+     * @throws UserOperationException          if user operations fail
+     * @throws UnauthorizedUserAccessException if no user signed in
+     * @throws DeckOperationException          if server error occurs
      */
     public DeckDto.GetResponse createDeck(DeckDto.CreateRequest deckDto) {
         if (deckDto == null) {
@@ -91,6 +92,9 @@ public class DeckService {
             Deck savedDeck = deckRepository.save(deck);
             logger.info("Successfully created deck");
             return convertToDto(savedDeck);
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (UserException e) {
             logger.error("Deck creation failed due to user issue: {}", e.getMessage());
             throw e;
@@ -105,9 +109,12 @@ public class DeckService {
      * 
      * @param id the UUID of the deck to retrieve
      * @return the deck with the specified ID
-     * @throws InvalidDeckParameterException if any nonnull arg is null
-     * @throws DeckNotFoundException         if no deck exists with the given ID
-     * @throws DeckOperationException        if server error occurs
+     * @throws InvalidDeckParameterException   if any nonnull arg is null
+     * @throws DeckNotFoundException           if no deck exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the deck
+     * @throws DeckOperationException          if server error occurs
      */
     public DeckDto.GetResponse getDeckById(UUID id) {
         if (id == null) {
@@ -140,6 +147,9 @@ public class DeckService {
         } catch (DeckNotFoundException e) {
             logger.error("Deck not found with provided ID: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch deck: {}", e.getMessage());
             throw new DeckOperationException("Failed to fetch deck", e);
@@ -151,9 +161,12 @@ public class DeckService {
      * 
      * @param id the UUID of the deck to retrieve
      * @return the deck with the specified ID
-     * @throws InvalidDeckParameterException if any nonnull arg is null
-     * @throws DeckNotFoundException         if no deck exists with the given ID
-     * @throws DeckOperationException        if server error occurs
+     * @throws InvalidDeckParameterException   if any nonnull arg is null
+     * @throws DeckNotFoundException           if no deck exists with the given ID
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the deck
+     * @throws DeckOperationException          if server error occurs
      */
     public DeckDto.GetResponseWithCardsAndUploads getDeckByIdWithCardsAndUploads(UUID id) {
         if (id == null) {
@@ -186,6 +199,9 @@ public class DeckService {
         } catch (DeckNotFoundException e) {
             logger.error("Deck not found with provided ID: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch deck: {}", e.getMessage());
             throw new DeckOperationException("Failed to fetch deck", e);
@@ -197,8 +213,9 @@ public class DeckService {
      * Currently unrestricted - should be limited to admin users in production.
      * 
      * @return a list of all decks in the system
-     * @throws UnauthorizedDeckAccessException if authorization fails or user is not
-     *                                         an admin
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin
      * @throws DeckOperationException          if server error occurs
      */
     public List<DeckDto.GetResponse> getAllDecks() {
@@ -224,6 +241,9 @@ public class DeckService {
         } catch (DeckException e) {
             logger.error("Deck operation failed: {}", e.getMessage());
             throw e;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all decks: {}", e.getMessage());
             throw new DeckOperationException("Failed to fetch all decks", e);
@@ -235,8 +255,11 @@ public class DeckService {
      * 
      * @param userId the UUID of the user whose decks to retrieve
      * @return a list of decks owned by the user, empty if user has no decks
-     * @throws InvalidDeckParameterException if any nonnull arg is null
-     * @throws DeckOperationException        if server error occurs
+     * @throws InvalidDeckParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of the decks
+     * @throws DeckOperationException          if server error occurs
      */
     public List<DeckDto.GetResponse> getAllUserDecks(UUID userId) {
         if (userId == null) {
@@ -262,6 +285,9 @@ public class DeckService {
                     .toList();
             logger.info("Fetched all decks belonging to the provided user");
             return decks;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to fetch all decks belonging to the user with this id: {}", e.getMessage());
             throw new DeckOperationException("Failed to fetch all decks belonging to the user with this id", e);
@@ -273,8 +299,11 @@ public class DeckService {
      * 
      * @param userId the UUID of the user whose deck count to retrieve
      * @return the number of decks owned by the user
-     * @throws InvalidDeckParameterException if any nonnull arg is null
-     * @throws DeckOperationException        if server error occurs
+     * @throws InvalidDeckParameterException   if any nonnull arg is null
+     * @throws UnauthorizedUserAccessException if no user signed in or if signed in
+     *                                         user is
+     *                                         not admin or the owner of decks
+     * @throws DeckOperationException          if server error occurs
      */
     public Long getCountOfAllUserDecks(UUID userId) {
         if (userId == null) {
@@ -299,6 +328,9 @@ public class DeckService {
             Long deckCount = deckRepository.countByUserId(userId);
             logger.info("This user has {} decks", deckCount);
             return deckCount;
+        } catch (UnauthorizedUserAccessException e) {
+            logger.error("Access denied: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
             logger.error("Failed to calculate user's decks: {}", e.getMessage());
             throw new DeckOperationException("Failed to calculate user's decks", e);
@@ -413,7 +445,7 @@ public class DeckService {
             deckRepository.deleteById(deckId);
             logger.info("Successfully deleted deck");
         } catch (DeckException e) {
-            logger.error("Deck deletion");
+            logger.error("Deck deletion failed: {}", e.getMessage());
             throw e;
         } catch (Exception e) {
             logger.error("Failed to delete deck: {}", e.getMessage());
